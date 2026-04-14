@@ -1,5 +1,7 @@
 # Traffic Camera Viewer
 
+[![CI](https://github.com/pfeerick/traffic-camera-viewer/actions/workflows/ci.yml/badge.svg)](https://github.com/pfeerick/traffic-camera-viewer/actions/workflows/ci.yml)
+
 A Rust desktop app for viewing Queensland traffic cameras in a configurable grid with automatic refresh.
 
 ## Features
