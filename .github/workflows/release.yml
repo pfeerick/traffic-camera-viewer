@@ -63,7 +63,7 @@ jobs:
         run: |
           mkdir -p dist
           cp target/${{ matrix.target }}/release/${{ matrix.bin }} dist/${{ matrix.artifact }}
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         with:
           name: ${{ matrix.artifact }}
           path: dist/${{ matrix.artifact }}
@@ -75,7 +75,7 @@ jobs:
     permissions:
       contents: write
     steps:
-      - uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@v8
         with:
           path: artifacts
           merge-multiple: true
