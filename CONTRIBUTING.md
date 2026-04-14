@@ -9,6 +9,21 @@ Thanks for your interest in contributing to Traffic Camera Viewer.
 - Rust toolchain (stable) via `rustup`
 - `cargo` available on PATH
 
+### Platform-specific build dependencies
+
+**Windows** — works out of the box after installing the Rust toolchain and VS Build Tools.
+
+**Linux (Debian/Ubuntu):**
+```bash
+sudo apt install libgtk-3-dev libxkbcommon-dev \
+  libxcb-render0-dev libxcb-shape0-dev libxcb-xfixes0-dev cmake
+```
+
+**macOS:**
+```bash
+brew install cmake
+```
+
 ### Build and Run
 
 ```bash
@@ -17,6 +32,38 @@ cargo build --release
 cargo run
 cargo test
 cargo check
+```
+
+## Pre-commit Hooks
+
+This project uses [pre-commit](https://pre-commit.com) for formatting and commit linting,
+and [commitizen](https://commitizen-tools.github.io/commitizen/) for semantic versioning.
+
+Install [uv](https://docs.astral.sh/uv/getting-started/installation/) if not already present:
+```bash
+# Windows
+winget install astral-sh.uv
+
+# Linux / macOS
+curl -LsSf https://astral.sh/uv/install.sh | sh
+```
+
+Then install the tools and activate the hooks:
+```bash
+uv tool install pre-commit
+uv tool install commitizen
+pre-commit install
+pre-commit install --hook-type commit-msg
+```
+
+Hooks that run automatically:
+- **`cargo fmt`** — formats changed Rust files on every commit
+- **conventional-pre-commit** — rejects commits whose message doesn't follow the
+  [Conventional Commits](https://www.conventionalcommits.org) spec
+
+To bump the version and generate a changelog entry:
+```bash
+cz bump
 ```
 
 ## Project Workflow
