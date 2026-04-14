@@ -64,7 +64,7 @@ impl HttpClient {
 
 const GEOJSON_URL: &str = "https://data.qldtraffic.qld.gov.au/webcameras.geojson";
 
-/// Fetch the QLD traffic camera list from the live GeoJSON feed.
+/// Fetch the QLD traffic camera list from the live `GeoJSON` feed.
 pub async fn fetch_camera_list(client: &HttpClient) -> Result<Vec<CameraInfo>, FetchError> {
     let body = client.0.get(GEOJSON_URL).send().await?.text().await?;
     let root: GeoJsonRoot =
@@ -170,7 +170,7 @@ fn try_save_image_rolling(
     // Collect all files for this camera stem.
     let prefix = format!("{stem}_");
     let mut matches: Vec<_> = std::fs::read_dir(save_path)?
-        .filter_map(|e| e.ok())
+        .filter_map(Result::ok)
         .filter(|e| {
             let name = e.file_name();
             let name = name.to_string_lossy();

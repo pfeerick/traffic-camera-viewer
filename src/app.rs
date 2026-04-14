@@ -22,9 +22,9 @@ pub struct AppState {
 
     pub client: HttpClient,
 
-    /// In-flight GeoJSON fetch on startup.
+    /// In-flight `GeoJSON` fetch on startup.
     pub geojson_promise: Option<Promise<Result<Vec<CameraInfo>, FetchError>>>,
-    /// Non-None when the GeoJSON fetch failed.
+    /// Non-None when the `GeoJSON` fetch failed.
     pub geojson_error: Option<String>,
 
     pub last_refresh: Option<DateTime<Local>>,
@@ -80,6 +80,7 @@ impl AppState {
 
     /// Spawn image fetch promises for every camera in the current filter and
     /// reset the refresh timer.
+    #[allow(clippy::cast_possible_wrap)] // refresh_interval_secs is always small (10–300)
     pub fn trigger_refresh_all(&mut self, ctx: &egui::Context) {
         let now = Local::now();
         self.last_refresh = Some(now);
@@ -122,25 +123,22 @@ impl AppState {
 
     // ── Promise polling ────────────────────────────────────────────────────
 
-    /// Poll the startup GeoJSON promise; on success builds the camera list and
+    /// Poll the startup `GeoJSON` promise; on success builds the camera list and
     /// triggers the first image refresh immediately.
     pub fn poll_geojson(&mut self, ctx: &egui::Context) {
         let is_ready = self
             .geojson_promise
             .as_ref()
-            .map(|p| p.ready().is_some())
-            .unwrap_or(false);
+            .is_some_and(|p| p.ready().is_some());
 
         if is_ready {
             // ready() returns &T — clone what we need before dropping the promise.
-            let outcome = if let Some(p) = &self.geojson_promise {
+            let outcome = self.geojson_promise.as_ref().and_then(|p| {
                 p.ready().map(|r| match r {
                     Ok(cams) => Ok(cams.clone()),
                     Err(e) => Err(e.to_string()),
                 })
-            } else {
-                None
-            };
+            });
             self.geojson_promise = None; // drop the promise
 
             match outcome {
@@ -171,7 +169,7 @@ impl AppState {
     /// Check all per-camera promises; upload decoded images to GPU textures on
     /// the UI thread when they arrive.
     ///
-    /// `Promise::ready()` returns `&T`, so we clone the ColorImage here before
+    /// `Promise::ready()` returns `&T`, so we clone the `ColorImage` here before
     /// transitioning the image state (avoiding a borrow-across-replace issue).
     pub fn poll_image_promises(&mut self, ctx: &egui::Context) {
         for cam in &mut self.cameras {
@@ -205,11 +203,7 @@ impl AppState {
                     }
                     Ok(CameraImageFetchOutcome::Unchanged { hash }) => {
                         cam.last_image_hash = Some(hash);
-                        if let Some(handle) = previous_texture {
-                            ImageState::Ready(handle)
-                        } else {
-                            ImageState::Idle
-                        }
+                        previous_texture.map_or(ImageState::Idle, ImageState::Ready)
                     }
                     Err(e) => ImageState::Error(e),
                 };

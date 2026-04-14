@@ -1,0 +1,8 @@
+{
+  // Even Better TOML uses SchemaStore's Cargo.toml schema which doesn't yet
+  // include the [lints] table (valid since Rust 1.73). Override the association
+  // to suppress the false-positive schema validation error.
+  "evenBetterToml.schema.associations": {
+    "Cargo\\.toml$": ""
+  }
+}

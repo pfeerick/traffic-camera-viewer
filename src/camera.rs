@@ -1,7 +1,7 @@
 use egui::TextureHandle;
 use poll_promise::Promise;
 
-/// Describes a single traffic camera from the GeoJSON feed.
+/// Describes a single traffic camera from the `GeoJSON` feed.
 #[derive(Debug, Clone)]
 pub struct CameraInfo {
     pub id: u32,
@@ -11,7 +11,7 @@ pub struct CameraInfo {
     pub image_url: String, // base URL; cache-buster appended at fetch time
 }
 
-/// Per-camera runtime state held in AppState.
+/// Per-camera runtime state held in `AppState`.
 pub struct CameraState {
     pub info: CameraInfo,
     pub image_state: ImageState,

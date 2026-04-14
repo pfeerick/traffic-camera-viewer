@@ -58,6 +58,25 @@ winresource = "0.1"
 # needed for round-trip serialization test in config.rs
 toml = "0.9"
 
+[lints.clippy]
+# egui slider pattern: local f64 mutated by slider then cast back to storage type.
+# These casts are safe and intentional — suppressing the pedantic warnings.
+cast_possible_truncation = "allow"
+cast_precision_loss      = "allow"
+cast_sign_loss           = "allow"
+# chrono Duration::seconds takes i64; our interval is u64 (always small, safe).
+cast_possible_wrap       = "allow"
+# show() functions are long by necessity (many UI sections in one panel).
+too_many_lines           = "allow"
+# mul_add suggestion in cell_h calculation is less readable, not a real perf win.
+suboptimal_flops         = "allow"
+# Nested if-let chains read more clearly than option_if_let_else rewrites here.
+option_if_let_else       = "allow"
+# map_unwrap_or vs map().unwrap_or() — style preference.
+map_unwrap_or            = "allow"
+# grid::show() takes &mut AppState for interface consistency with other panels.
+needless_pass_by_ref_mut = "allow"
+
 [profile.release]
 opt-level = 3
 lto       = "thin"

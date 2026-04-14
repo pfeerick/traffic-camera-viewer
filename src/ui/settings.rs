@@ -13,6 +13,12 @@ fn color_swatch(ui: &mut egui::Ui, rgb: [u8; 3]) {
     );
 }
 
+#[allow(
+    clippy::cast_precision_loss,     // usize/u64→f64 for slider ranges; values are always small
+    clippy::cast_possible_truncation, // f64→usize/u64/u8 slider round-trip; values stay in range
+    clippy::cast_sign_loss,          // f64→u8/usize slider round-trip; slider min is 0
+    clippy::too_many_lines
+)]
 pub fn show(ui: &mut egui::Ui, state: &mut AppState) {
     ui.heading("Settings");
     ui.separator();
@@ -151,7 +157,7 @@ pub fn show(ui: &mut egui::Ui, state: &mut AppState) {
                             {
                                 let order = &mut state.pending_config.camera_order;
                                 if order.len() != n {
-                                    *order = active_ids.clone();
+                                    order.clone_from(&active_ids);
                                 }
                                 if let Some(i) = order.iter().position(|&id| id == cam_id)
                                     && i > 0
@@ -165,7 +171,7 @@ pub fn show(ui: &mut egui::Ui, state: &mut AppState) {
                             {
                                 let order = &mut state.pending_config.camera_order;
                                 if order.len() != n {
-                                    *order = active_ids.clone();
+                                    order.clone_from(&active_ids);
                                 }
                                 if let Some(i) = order.iter().position(|&id| id == cam_id)
                                     && i + 1 < order.len()
@@ -235,7 +241,7 @@ pub fn show(ui: &mut egui::Ui, state: &mut AppState) {
                 ui.add_space(4.0);
                 ui.label("Camera title font size:");
                 ui.add_enabled_ui(state.pending_config.show_camera_titles, |ui| {
-                    let mut title_size = state.pending_config.camera_title_font_size as f64;
+                    let mut title_size = f64::from(state.pending_config.camera_title_font_size);
                     if ui
                         .add(
                             egui::Slider::new(&mut title_size, 9.0..=24.0)
@@ -251,9 +257,9 @@ pub fn show(ui: &mut egui::Ui, state: &mut AppState) {
                 ui.add_space(4.0);
                 ui.label("Camera title color:");
                 ui.add_enabled_ui(state.pending_config.show_camera_titles, |ui| {
-                    let mut r = state.pending_config.camera_title_rgb[0] as f64;
-                    let mut g = state.pending_config.camera_title_rgb[1] as f64;
-                    let mut b = state.pending_config.camera_title_rgb[2] as f64;
+                    let mut r = f64::from(state.pending_config.camera_title_rgb[0]);
+                    let mut g = f64::from(state.pending_config.camera_title_rgb[1]);
+                    let mut b = f64::from(state.pending_config.camera_title_rgb[2]);
 
                     let mut changed = false;
                     changed |= ui
@@ -296,9 +302,9 @@ pub fn show(ui: &mut egui::Ui, state: &mut AppState) {
 
                 ui.add_space(4.0);
                 ui.label("App background color (grid only):");
-                let mut r = state.pending_config.app_background_rgb[0] as f64;
-                let mut g = state.pending_config.app_background_rgb[1] as f64;
-                let mut b = state.pending_config.app_background_rgb[2] as f64;
+                let mut r = f64::from(state.pending_config.app_background_rgb[0]);
+                let mut g = f64::from(state.pending_config.app_background_rgb[1]);
+                let mut b = f64::from(state.pending_config.app_background_rgb[2]);
 
                 let mut changed = false;
                 changed |= ui

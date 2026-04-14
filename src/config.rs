@@ -42,7 +42,7 @@ pub struct AppConfig {
 impl Default for AppConfig {
     fn default() -> Self {
         Self {
-            selected_districts: ["Wide Bay/Burnett".to_string()].into_iter().collect(),
+            selected_districts: std::iter::once("Wide Bay/Burnett".to_string()).collect(),
             refresh_interval_secs: 60,
             column_count: 3,
             save_to_disk: false,
@@ -63,7 +63,7 @@ impl Default for AppConfig {
 fn default_save_path() -> String {
     let exe_dir = std::env::current_exe()
         .ok()
-        .and_then(|p| p.parent().map(|p| p.to_path_buf()))
+        .and_then(|p| p.parent().map(std::path::Path::to_path_buf))
         .unwrap_or_else(|| PathBuf::from("."));
     exe_dir
         .join("Traffic Camera Footage")
@@ -86,6 +86,7 @@ mod tests {
     use super::*;
 
     #[test]
+    #[allow(clippy::float_cmp)] // literal f32 defaults — exact equality is correct here
     fn default_config_has_wide_bay() {
         let cfg = AppConfig::default();
         assert!(cfg.selected_districts.contains("Wide Bay/Burnett"));
@@ -102,6 +103,7 @@ mod tests {
     }
 
     #[test]
+    #[allow(clippy::float_cmp)] // TOML round-trip preserves exact f32 bit pattern
     fn config_round_trips_via_toml() {
         let mut cfg = AppConfig::default();
         cfg.selected_districts.insert("Metropolitan".to_string());

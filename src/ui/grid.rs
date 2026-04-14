@@ -6,7 +6,12 @@ pub enum GridAction {
     HideCamera(u32),
 }
 
-pub fn show(ui: &mut egui::Ui, state: &mut AppState) -> Option<GridAction> {
+#[allow(
+    clippy::cast_precision_loss, // u32/usize→f32 for pixel geometry; values are always small
+    clippy::suboptimal_flops,    // cell_h = cell_w * ratio is clearer than mul_add
+    clippy::too_many_lines
+)]
+pub fn show(ui: &mut egui::Ui, state: &AppState) -> Option<GridAction> {
     let mut action: Option<GridAction> = None;
 
     // Guard against tiny bottom-edge bleed when scrolled content meets the
