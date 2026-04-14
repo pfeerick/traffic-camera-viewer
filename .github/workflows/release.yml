@@ -5,6 +5,13 @@ on:
     branches: [main]
     tags: ['v*']
 
+# Only one release run per commit. When a tag and branch push arrive
+# together (e.g. git push --follow-tags), the tag run cancels the
+# branch run so only the versioned release is produced.
+concurrency:
+  group: release-${{ github.sha }}
+  cancel-in-progress: true
+
 jobs:
   build:
     name: Build (${{ matrix.target }})
