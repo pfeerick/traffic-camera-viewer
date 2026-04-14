@@ -1,0 +1,54 @@
+[package]
+name = "traffic-camera-viewer"
+version = "0.1.0"
+edition = "2024"
+
+[[bin]]
+name = "traffic-camera-viewer"
+path = "src/main.rs"
+
+[dependencies]
+# UI framework
+eframe       = { version = "0.34.1", default-features = false, features = ["default_fonts", "glow"] }
+egui         = "0.34.1"
+
+# HTTP client (rustls avoids needing OpenSSL on Windows)
+reqwest      = { version = "0.13.2", default-features = false, features = ["rustls", "json"] }
+
+# Async runtime
+tokio        = { version = "1", features = ["rt-multi-thread", "macros", "time", "sync"] }
+
+# Serialization
+serde        = { version = "1", features = ["derive"] }
+serde_json   = "1"
+
+# JPEG decoding (only jpeg feature — cameras serve JPEG only)
+image        = { version = "0.25", default-features = false, features = ["jpeg"] }
+
+# Async-to-sync bridge for egui render loop
+poll-promise = { version = "0.3.0", features = ["tokio"] }
+
+# Config persistence (TOML in %APPDATA%)
+confy        = "2.0.0"
+
+# Time (status bar display + cache-busting timestamps)
+chrono       = { version = "0.4", default-features = false, features = ["clock"] }
+
+# Error types
+thiserror    = "2"
+
+# Native file/folder picker dialog
+rfd          = "0.17.2"
+
+# Logging
+log          = "0.4"
+env_logger   = "0.11"
+
+[dev-dependencies]
+# needed for round-trip serialization test in config.rs
+toml = "0.9"
+
+[profile.release]
+opt-level = 3
+lto       = "thin"
+strip     = true
