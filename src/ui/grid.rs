@@ -1,16 +1,11 @@
 use crate::app::AppState;
-use crate::camera::ImageState;
+use crate::camera::{CameraState, ImageState};
 
 pub enum GridAction {
     RefreshCamera(u32),
     HideCamera(u32),
 }
 
-#[allow(
-    clippy::cast_precision_loss, // u32/usize→f32 for pixel geometry; values are always small
-    clippy::suboptimal_flops,    // cell_h = cell_w * ratio is clearer than mul_add
-    clippy::too_many_lines
-)]
 pub fn show(ui: &mut egui::Ui, state: &AppState) -> Option<GridAction> {
     let mut action: Option<GridAction> = None;
 
@@ -47,7 +42,7 @@ pub fn show(ui: &mut egui::Ui, state: &AppState) -> Option<GridAction> {
     // ui.available_width() already excludes the scrollbar.
     let cols = state.config.column_count.max(1);
     let [aspect_w, aspect_h] = state.config.camera_aspect_ratio;
-    let aspect_h_over_w = (aspect_h as f32 / aspect_w as f32).max(0.1);
+    let aspect_h_over_w = (f32::from(aspect_h) / f32::from(aspect_w)).max(0.1);
     let [title_r, title_g, title_b] = state.config.camera_title_rgb;
     let title_color = egui::Color32::from_rgb(title_r, title_g, title_b);
 
@@ -59,7 +54,10 @@ pub fn show(ui: &mut egui::Ui, state: &AppState) -> Option<GridAction> {
             // We apply spacing manually so the slider is the only inter-tile gap source.
             ui.spacing_mut().item_spacing = egui::vec2(0.0, 0.0);
             let available_w = ui.available_width();
+            // cols is 1–6 so the usize→f32 cast is exact; mul_add form is less readable here.
+            #[allow(clippy::cast_precision_loss, clippy::suboptimal_flops)]
             let cell_w = ((available_w - h_spacing * (cols as f32 - 1.0)) / cols as f32).max(80.0);
+            #[allow(clippy::suboptimal_flops)] // mul_add(ratio, 0.0) adds no clarity here
             let cell_h = cell_w * aspect_h_over_w;
             let cell_size = egui::vec2(cell_w, cell_h);
 
@@ -71,9 +69,7 @@ pub fn show(ui: &mut egui::Ui, state: &AppState) -> Option<GridAction> {
 
                 ui.horizontal(|ui| {
                     for idx in row_start..row_end {
-                        let camera_id = state.cameras[idx].info.id;
-                        let camera_name = state.cameras[idx].info.name.clone();
-                        let camera_locality = state.cameras[idx].info.locality.clone();
+                        let camera = &state.cameras[idx];
 
                         ui.vertical(|ui| {
                             ui.set_width(cell_w);
@@ -81,112 +77,24 @@ pub fn show(ui: &mut egui::Ui, state: &AppState) -> Option<GridAction> {
 
                             // Optional title block above each image.
                             if state.config.show_camera_titles {
-                                let title_size = state.config.camera_title_font_size;
                                 ui.label(
-                                    egui::RichText::new(&camera_locality)
+                                    egui::RichText::new(&camera.info.locality)
                                         .strong()
-                                        .size(title_size)
+                                        .size(state.config.camera_title_font_size)
                                         .color(title_color),
                                 )
-                                .on_hover_text(&camera_name);
+                                .on_hover_text(&camera.info.name);
                             }
 
-                            // Image area — capture a single Response from each branch
-                            // so we can attach hover text and the context menu once.
-                            let response = match &state.cameras[idx].image_state {
-                                ImageState::Idle => {
-                                    let (rect, response) =
-                                        ui.allocate_exact_size(cell_size, egui::Sense::click());
-                                    ui.painter().rect_filled(
-                                        rect,
-                                        4.0,
-                                        egui::Color32::from_gray(40),
-                                    );
-                                    response
-                                }
-
-                                ImageState::Loading { previous, .. } => {
-                                    if let Some(handle) = previous {
-                                        let sized = egui::load::SizedTexture::from_handle(handle);
-                                        let response = ui.add(
-                                            egui::Image::new(sized)
-                                                .fit_to_exact_size(cell_size)
-                                                .maintain_aspect_ratio(true)
-                                                .sense(egui::Sense::click()),
-                                        );
-                                        // Overlay a small spinner in the bottom-right corner
-                                        // to signal that a refresh is in progress.
-                                        let spinner_size = (cell_w * 0.12).clamp(14.0, 28.0);
-                                        let margin = spinner_size * 0.4;
-                                        let spinner_center = response.rect.max
-                                            - egui::vec2(
-                                                spinner_size / 2.0 + margin,
-                                                spinner_size / 2.0 + margin,
-                                            );
-                                        let spinner_rect = egui::Rect::from_center_size(
-                                            spinner_center,
-                                            egui::vec2(spinner_size, spinner_size),
-                                        );
-                                        ui.put(
-                                            spinner_rect,
-                                            egui::Spinner::new().size(spinner_size),
-                                        );
-                                        response
-                                    } else {
-                                        let (rect, response) =
-                                            ui.allocate_exact_size(cell_size, egui::Sense::click());
-                                        ui.painter().rect_filled(
-                                            rect,
-                                            4.0,
-                                            egui::Color32::from_gray(40),
-                                        );
-                                        // Overlay spinner in the centre of the placeholder.
-                                        let spinner_rect = egui::Rect::from_center_size(
-                                            rect.center(),
-                                            egui::vec2(32.0, 32.0),
-                                        );
-                                        ui.put(spinner_rect, egui::Spinner::new());
-                                        response
-                                    }
-                                }
-
-                                ImageState::Ready(handle) => {
-                                    let sized = egui::load::SizedTexture::from_handle(handle);
-                                    ui.add(
-                                        egui::Image::new(sized)
-                                            .fit_to_exact_size(cell_size)
-                                            .maintain_aspect_ratio(true)
-                                            .sense(egui::Sense::click()),
-                                    )
-                                }
-
-                                ImageState::Error(msg) => {
-                                    let (rect, response) =
-                                        ui.allocate_exact_size(cell_size, egui::Sense::click());
-                                    ui.painter().rect_filled(
-                                        rect,
-                                        4.0,
-                                        egui::Color32::from_rgb(120, 20, 20),
-                                    );
-                                    ui.painter().text(
-                                        rect.center(),
-                                        egui::Align2::CENTER_CENTER,
-                                        msg.as_str(),
-                                        egui::FontId::proportional(11.0),
-                                        egui::Color32::WHITE,
-                                    );
-                                    response
-                                }
-                            };
-
-                            let response = response.on_hover_text(&camera_name);
+                            let response = render_tile(ui, camera, cell_size);
+                            let response = response.on_hover_text(&camera.info.name);
                             response.context_menu(|ui| {
                                 if ui.button("Refresh").clicked() {
-                                    action = Some(GridAction::RefreshCamera(camera_id));
+                                    action = Some(GridAction::RefreshCamera(camera.info.id));
                                     ui.close();
                                 }
                                 if ui.button("Hide camera").clicked() {
-                                    action = Some(GridAction::HideCamera(camera_id));
+                                    action = Some(GridAction::HideCamera(camera.info.id));
                                     ui.close();
                                 }
                             });
@@ -207,4 +115,77 @@ pub fn show(ui: &mut egui::Ui, state: &AppState) -> Option<GridAction> {
         });
 
     action
+}
+
+/// Render a single camera tile and return its [`egui::Response`].
+/// The caller attaches hover text and the context menu.
+fn render_tile(ui: &mut egui::Ui, camera: &CameraState, cell_size: egui::Vec2) -> egui::Response {
+    match &camera.image_state {
+        ImageState::Idle => {
+            let (rect, response) = ui.allocate_exact_size(cell_size, egui::Sense::click());
+            ui.painter()
+                .rect_filled(rect, 4.0, egui::Color32::from_gray(40));
+            response
+        }
+
+        ImageState::Loading { previous, .. } => {
+            if let Some(handle) = previous {
+                let sized = egui::load::SizedTexture::from_handle(handle);
+                let response = ui.add(
+                    egui::Image::new(sized)
+                        .fit_to_exact_size(cell_size)
+                        .maintain_aspect_ratio(true)
+                        .sense(egui::Sense::click()),
+                );
+                // Overlay a small spinner in the bottom-right corner
+                // to signal that a refresh is in progress.
+                let spinner_size = (cell_size.x * 0.12).clamp(14.0, 28.0);
+                let margin = spinner_size * 0.4;
+                let spinner_center = response.rect.max
+                    - egui::vec2(spinner_size / 2.0 + margin, spinner_size / 2.0 + margin);
+                ui.put(
+                    egui::Rect::from_center_size(
+                        spinner_center,
+                        egui::vec2(spinner_size, spinner_size),
+                    ),
+                    egui::Spinner::new().size(spinner_size),
+                );
+                response
+            } else {
+                let (rect, response) = ui.allocate_exact_size(cell_size, egui::Sense::click());
+                ui.painter()
+                    .rect_filled(rect, 4.0, egui::Color32::from_gray(40));
+                // Overlay spinner in the centre of the placeholder.
+                ui.put(
+                    egui::Rect::from_center_size(rect.center(), egui::vec2(32.0, 32.0)),
+                    egui::Spinner::new(),
+                );
+                response
+            }
+        }
+
+        ImageState::Ready(handle) => {
+            let sized = egui::load::SizedTexture::from_handle(handle);
+            ui.add(
+                egui::Image::new(sized)
+                    .fit_to_exact_size(cell_size)
+                    .maintain_aspect_ratio(true)
+                    .sense(egui::Sense::click()),
+            )
+        }
+
+        ImageState::Error(msg) => {
+            let (rect, response) = ui.allocate_exact_size(cell_size, egui::Sense::click());
+            ui.painter()
+                .rect_filled(rect, 4.0, egui::Color32::from_rgb(120, 20, 20));
+            ui.painter().text(
+                rect.center(),
+                egui::Align2::CENTER_CENTER,
+                msg.as_str(),
+                egui::FontId::proportional(11.0),
+                egui::Color32::WHITE,
+            );
+            response
+        }
+    }
 }

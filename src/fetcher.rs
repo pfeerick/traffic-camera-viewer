@@ -31,16 +31,13 @@ pub struct GeoFeature {
 }
 
 #[derive(Debug, Deserialize)]
-#[allow(dead_code)]
 pub struct CameraProperties {
     pub id: u32,
     pub description: String,
     pub district: String,
     pub locality: String,
-    #[serde(default)]
-    pub postcode: String, // kept in wire type but not copied to CameraInfo
     pub image_url: String,
-    // All other GeoJSON fields are ignored by serde automatically.
+    // All other GeoJSON fields (e.g. postcode) are ignored by serde automatically.
 }
 
 // ── HTTP client ──────────────────────────────────────────────────────────────

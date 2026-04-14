@@ -3,7 +3,7 @@ use std::collections::BTreeSet;
 use std::path::PathBuf;
 
 const APP_NAME: &str = "traffic-camera-viewer";
-const NATIVE_CAMERA_IMAGE_SIZE: [u32; 2] = [320, 256];
+const NATIVE_CAMERA_IMAGE_SIZE: [u16; 2] = [320, 256];
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(default)]
@@ -11,7 +11,7 @@ pub struct AppConfig {
     /// Districts whose cameras are shown.
     pub selected_districts: BTreeSet<String>,
     /// Auto-refresh period in seconds (10–300).
-    pub refresh_interval_secs: u64,
+    pub refresh_interval_secs: u32,
     /// Number of columns in the image grid (1–6).
     pub column_count: usize,
     /// Save fetched images to disk.
@@ -29,7 +29,7 @@ pub struct AppConfig {
     /// Camera title text color as RGB.
     pub camera_title_rgb: [u8; 3],
     /// Camera image tile aspect ratio as width:height.
-    pub camera_aspect_ratio: [u32; 2],
+    pub camera_aspect_ratio: [u16; 2],
     /// Grid/background color as RGB (does not affect status bar panel).
     pub app_background_rgb: [u8; 3],
     /// Camera IDs that have been manually hidden by the user.

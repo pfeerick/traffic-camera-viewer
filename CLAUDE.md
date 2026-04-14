@@ -80,27 +80,27 @@ git config --local core.safecrlf false  # silence conversion warnings
 CI enforces `cargo clippy -- -D warnings`. The project also targets zero warnings under
 `-W clippy::pedantic -W clippy::nursery` (what rust-analyzer surfaces in VS Code).
 
-Suppression strategy:
-- **Fix legitimate issues** in source (doc backticks, redundant closures, lossless casts, etc.)
-- **`[lints.clippy]`** in `Cargo.toml` documents intentional suppressions with explanations
-- **`#[allow(...)]`** attributes on specific functions (e.g. egui slider cast round-trips in
-  `settings::show`, pixel geometry casts in `grid::show`) so the suppression holds even when
-  clippy is invoked with explicit `-W` flags that would otherwise override `[lints.clippy]`
+Prefer fixing the code over silencing lints. When a suppression is truly unavoidable, use a
+narrow inline `#[allow(...)]` on the exact line with an explanatory comment. There is no
+`[lints.clippy]` block in `Cargo.toml`.
 
-When adding new UI code with egui sliders, the existing `#[allow]` on `settings::show` already
-covers the `as f64` / `as usize` slider pattern — no need to add new suppressions.
+When adding new UI code with egui sliders, pass the config field directly to `Slider::new` using
+its native type (e.g. `u32`, `usize`, `u8`, `f32`) — no `as f64` round-trips needed.
 
 ## CI / GitHub Actions
 
 | Workflow | Trigger | Jobs |
 |----------|---------|------|
-| `ci.yml` | every push + PR (all branches) and `v*` tags | lint, test, build (all 3 platforms), release (main + tags only) |
+| `ci.yml` | every push + PR (all branches) | lint, test, build (all 3 platforms); artifacts uploaded on `main` only |
+| `release.yml` | `workflow_run` on `ci.yml` completing for `main` | downloads artifacts; detects version tag on head commit; publishes rolling `latest` or versioned release |
 
-Concurrency is grouped by `github.ref`, so `git push --follow-tags` fires two
-independent runs (one for `main`, one for the tag) that never cancel each other.
+`git push --follow-tags` fires only one `ci.yml` run (the `main` branch push; tag pushes no
+longer trigger CI). Once CI completes, `release.yml` checks whether the commit carries a `v*`
+tag to decide which release type to publish.
 
-Push to `main` → lint/test/build run, rolling `latest` pre-release is updated.
-Push a `v*` tag (via `cz bump`) → lint/test/build run, versioned release is created with auto-generated notes.
+Push to `main` (no tag) → rolling `latest` pre-release updated.
+Push a `v*` tag (via `cz bump`) → versioned release created with auto-generated notes and a
+downloads table; asset names include the version (e.g. `traffic-camera-viewer-v0.5.2-windows.exe`).
 
 Release platforms: Windows x86_64, Linux x86_64, macOS arm64.
 macOS Intel (`macos-15-intel`) is commented out in the matrix — uncomment to re-enable.

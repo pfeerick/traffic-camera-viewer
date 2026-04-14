@@ -125,9 +125,8 @@ Allowed types:
 - Avoid reformatting unrelated files.
 - Add comments only where logic is not obvious.
 - **Lint:** `cargo clippy -- -D warnings` must pass. The project also targets zero warnings under
-  `-W clippy::pedantic -W clippy::nursery`; intentional suppressions live in `[lints.clippy]`
-  in `Cargo.toml` and as `#[allow(...)]` attributes on the relevant functions, each with an
-  explanatory comment.
+  `-W clippy::pedantic -W clippy::nursery`. Prefer fixing the code over silencing lints; when a
+  suppression is unavoidable use a narrow inline `#[allow(...)]` on the exact line with a comment.
 
 ## UI Changes
 

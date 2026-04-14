@@ -80,11 +80,11 @@ impl AppState {
 
     /// Spawn image fetch promises for every camera in the current filter and
     /// reset the refresh timer.
-    #[allow(clippy::cast_possible_wrap)] // refresh_interval_secs is always small (10–300)
     pub fn trigger_refresh_all(&mut self, ctx: &egui::Context) {
         let now = Local::now();
         self.last_refresh = Some(now);
-        self.next_refresh = Some(now + Duration::seconds(self.config.refresh_interval_secs as i64));
+        self.next_refresh =
+            Some(now + Duration::seconds(i64::from(self.config.refresh_interval_secs)));
 
         let save_to_disk = self.config.save_to_disk;
         let max_snapshots = self.config.max_snapshots;
@@ -96,10 +96,9 @@ impl AppState {
             let ctx2 = ctx.clone();
             let save_path2 = save_path.clone();
             let previous_hash = cam.last_image_hash;
-            let previous_texture = if let ImageState::Ready(handle) = &cam.image_state {
-                Some(handle.clone())
-            } else {
-                None
+            let previous_texture = match &cam.image_state {
+                ImageState::Ready(handle) => Some(handle.clone()),
+                _ => None,
             };
 
             cam.image_state = ImageState::Loading {
@@ -176,18 +175,16 @@ impl AppState {
             // Extract the result (cloning what we need) while holding an
             // immutable borrow of image_state, then release that borrow before
             // mutating image_state below.
-            let (result, previous_texture) =
-                if let ImageState::Loading { promise, previous } = &cam.image_state {
-                    (
-                        promise.ready().map(|r| match r {
-                            Ok(outcome) => Ok(outcome.clone()),
-                            Err(e) => Err(e.to_string()),
-                        }),
-                        previous.clone(),
-                    )
-                } else {
-                    (None, None)
-                };
+            let (result, previous_texture) = match &cam.image_state {
+                ImageState::Loading { promise, previous } => (
+                    promise.ready().map(|r| match r {
+                        Ok(outcome) => Ok(outcome.clone()),
+                        Err(e) => Err(e.to_string()),
+                    }),
+                    previous.clone(),
+                ),
+                _ => (None, None),
+            };
 
             if let Some(result) = result {
                 cam.image_state = match result {
@@ -223,10 +220,9 @@ impl AppState {
             let client = self.client.clone();
             let ctx2 = ctx.clone();
             let previous_hash = cam.last_image_hash;
-            let previous_texture = if let ImageState::Ready(handle) = &cam.image_state {
-                Some(handle.clone())
-            } else {
-                None
+            let previous_texture = match &cam.image_state {
+                ImageState::Ready(handle) => Some(handle.clone()),
+                _ => None,
             };
 
             cam.image_state = ImageState::Loading {
