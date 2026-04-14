@@ -1,5 +1,11 @@
 # Changelog
 
+## v0.5.2 (2026-04-14)
+
+### Fix
+
+- **ci**: checkout before artifact download to prevent workspace wipe
+
 ## v0.5.1 (2026-04-14)
 
 ### Fix
