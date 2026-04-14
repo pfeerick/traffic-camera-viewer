@@ -45,6 +45,10 @@ fn main() {
             .with_icon(load_icon())
             .with_inner_size([1200.0_f32, 800.0_f32])
             .with_min_inner_size([600.0_f32, 400.0_f32]),
+        // Persist window position, size, and maximised state across sessions.
+        // Position is stored in absolute screen coordinates, so monitor
+        // placement is also restored when the same monitor is connected.
+        persist_window: true,
         ..Default::default()
     };
 
