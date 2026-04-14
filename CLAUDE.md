@@ -67,6 +67,11 @@ cz changelog   # regenerate CHANGELOG.md without bumping
 
 Config in `.cz.toml`; version is sourced directly from `Cargo.toml`.
 
+**Known Windows quirk:** after `cz bump`, git warns that `Cargo.toml` and `Cargo.lock` will
+have CRLF replaced by LF. This is harmless — git stores LF correctly per `.gitattributes`.
+It happens because Python writes files with `\r\n` on Windows; there is no env-var fix.
+Do not chase this warning.
+
 ## CI / GitHub Actions
 
 | Workflow | Trigger | Jobs |
