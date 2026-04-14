@@ -70,7 +70,8 @@ Config in `.cz.toml`; version is sourced directly from `Cargo.toml`.
 **Windows:** Git for Windows sets `core.autocrlf=true` globally, which conflicts with this
 repo's `eol=lf` policy and causes spurious CRLF warnings from `cz bump`. Fix once per clone:
 ```bash
-git config --local core.autocrlf input
+git config --local core.autocrlf input  # normalise to LF on commit
+git config --local core.safecrlf false  # silence conversion warnings
 ```
 
 ## CI / GitHub Actions

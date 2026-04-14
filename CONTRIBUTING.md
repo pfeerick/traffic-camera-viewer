@@ -21,9 +21,10 @@ git config --local push.atomic true      # push branch + tags atomically (all or
 
 **Windows** — works out of the box after installing the Rust toolchain and VS Build Tools.
 
-Also run this to prevent spurious CRLF warnings from `cz bump`:
+Also run these to prevent spurious CRLF warnings from `cz bump`:
 ```bash
-git config --local core.autocrlf input
+git config --local core.autocrlf input  # normalise to LF on commit
+git config --local core.safecrlf false  # silence conversion warnings
 ```
 
 **Linux (Debian/Ubuntu):**
