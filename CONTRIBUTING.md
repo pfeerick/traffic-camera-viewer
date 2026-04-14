@@ -66,6 +66,35 @@ To bump the version and generate a changelog entry:
 cz bump
 ```
 
+## Commit Message Format
+
+This project follows the [Conventional Commits](https://www.conventionalcommits.org) spec.
+The `commit-msg` pre-commit hook enforces this automatically.
+
+```
+<type>(<optional scope>): <short summary>
+
+<optional body>
+```
+
+Allowed types:
+
+| Type | Use for |
+|------|---------|
+| `feat` | A new feature |
+| `fix` | A bug fix |
+| `docs` | Documentation only |
+| `style` | Formatting, whitespace (no logic change) |
+| `refactor` | Code restructuring without feature/fix |
+| `test` | Adding or updating tests |
+| `perf` | Performance improvements |
+| `build` | Build system or dependency changes |
+| `ci` | CI/CD configuration changes |
+| `chore` | Maintenance tasks that don't fit above |
+
+`cz bump` uses these types to determine the next semantic version:
+`feat` → minor bump, `fix` → patch bump, breaking change footer (`BREAKING CHANGE:`) → major bump.
+
 ## Project Workflow
 
 1. Create a feature branch.
