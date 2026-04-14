@@ -1,5 +1,13 @@
 # Changelog
 
+## v0.3.0 (2026-04-14)
+
+### Feat
+
+- show version and build date in window title and settings panel
+- add Release status badge to README
+- add CI status badge to README
+
 ## v0.2.1 (2026-04-14)
 
 ### Fix
