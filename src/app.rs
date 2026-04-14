@@ -262,7 +262,10 @@ impl AppState {
         self.cameras = self
             .all_cameras
             .iter()
-            .filter(|c| self.config.selected_districts.contains(&c.district))
+            .filter(|c| {
+                self.config.selected_districts.contains(&c.district)
+                    && !self.config.hidden_camera_ids.contains(&c.id)
+            })
             .map(|c| CameraState {
                 info: c.clone(),
                 image_state: ImageState::Idle,
@@ -331,6 +334,16 @@ impl eframe::App for AppState {
             match action {
                 crate::ui::grid::GridAction::RefreshCamera(id) => {
                     self.trigger_refresh_single(&ctx, id);
+                }
+                crate::ui::grid::GridAction::HideCamera(id) => {
+                    self.config.hidden_camera_ids.insert(id);
+                    // Keep pending_config in sync so the settings panel reflects the change.
+                    self.pending_config.hidden_camera_ids.insert(id);
+                    save_config(&self.config);
+                    // Remove only this camera rather than rebuilding the whole list, so
+                    // other cameras keep their loaded textures without disruption.
+                    self.cameras.retain(|c| c.info.id != id);
+                    ctx.request_repaint();
                 }
             }
         }

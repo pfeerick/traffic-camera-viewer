@@ -32,6 +32,8 @@ pub struct AppConfig {
     pub camera_aspect_ratio: [u32; 2],
     /// Grid/background color as RGB (does not affect status bar panel).
     pub app_background_rgb: [u8; 3],
+    /// Camera IDs that have been manually hidden by the user.
+    pub hidden_camera_ids: BTreeSet<u32>,
 }
 
 impl Default for AppConfig {
@@ -49,6 +51,7 @@ impl Default for AppConfig {
             camera_title_rgb: [220, 220, 220],
             camera_aspect_ratio: NATIVE_CAMERA_IMAGE_SIZE,
             app_background_rgb: [24, 24, 24],
+            hidden_camera_ids: BTreeSet::new(),
         }
     }
 }

@@ -3,6 +3,7 @@ use crate::camera::ImageState;
 
 pub enum GridAction {
     RefreshCamera(u32),
+    HideCamera(u32),
 }
 
 pub fn show(ui: &mut egui::Ui, state: &mut AppState) -> Option<GridAction> {
@@ -177,6 +178,10 @@ pub fn show(ui: &mut egui::Ui, state: &mut AppState) -> Option<GridAction> {
                             response.context_menu(|ui| {
                                 if ui.button("Refresh").clicked() {
                                     action = Some(GridAction::RefreshCamera(camera_id));
+                                    ui.close();
+                                }
+                                if ui.button("Hide camera").clicked() {
+                                    action = Some(GridAction::HideCamera(camera_id));
                                     ui.close();
                                 }
                             });

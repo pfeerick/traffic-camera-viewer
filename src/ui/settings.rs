@@ -49,6 +49,56 @@ pub fn show(ui: &mut egui::Ui, state: &mut AppState) {
 
         ui.separator();
 
+        // ── Cameras ───────────────────────────────────────────────────────────
+        egui::CollapsingHeader::new("Cameras")
+            .default_open(false)
+            .show(ui, |ui| {
+                if state.all_cameras.is_empty() {
+                    ui.label("Camera list not loaded yet.");
+                } else {
+                    ui.label(
+                        egui::RichText::new("Uncheck to hide a camera from the grid.")
+                            .small()
+                            .color(egui::Color32::from_gray(140)),
+                    );
+                    ui.add_space(4.0);
+
+                    // Clone to avoid holding borrows on `state` during iteration.
+                    let all_cameras = state.all_cameras.clone();
+                    let selected_districts = state.pending_config.selected_districts.clone();
+                    // Only show cameras from districts that are currently selected.
+                    let mut active_districts: Vec<_> = selected_districts.iter().collect();
+                    active_districts.sort();
+
+                    for district in &active_districts {
+                        let cams_in_district: Vec<_> = all_cameras
+                            .iter()
+                            .filter(|c| c.district == **district)
+                            .collect();
+                        if cams_in_district.is_empty() {
+                            continue;
+                        }
+
+                        ui.add_space(4.0);
+                        ui.label(egui::RichText::new(*district).strong().small());
+
+                        for cam in cams_in_district {
+                            let mut visible =
+                                !state.pending_config.hidden_camera_ids.contains(&cam.id);
+                            if ui.checkbox(&mut visible, &cam.name).changed() {
+                                if visible {
+                                    state.pending_config.hidden_camera_ids.remove(&cam.id);
+                                } else {
+                                    state.pending_config.hidden_camera_ids.insert(cam.id);
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+
+        ui.separator();
+
         // ── Display ───────────────────────────────────────────────────────────
         egui::CollapsingHeader::new("Display")
             .default_open(true)
