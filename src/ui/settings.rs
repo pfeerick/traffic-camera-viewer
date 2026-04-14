@@ -226,10 +226,9 @@ pub fn show(ui: &mut egui::Ui, state: &mut AppState) {
                             .button("🗑 Clear Cache")
                             .on_hover_text("Delete all saved images in the save directory")
                             .clicked()
+                            && let Err(e) = std::fs::remove_dir_all(&cache_path)
                         {
-                            if let Err(e) = std::fs::remove_dir_all(&cache_path) {
-                                log::warn!("Failed to clear cache: {e}");
-                            }
+                            log::warn!("Failed to clear cache: {e}");
                         }
                     });
                     if !cache_exists {

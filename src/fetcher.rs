@@ -119,9 +119,9 @@ pub async fn fetch_camera_image(
     if save_to_disk && !save_path.as_os_str().is_empty() {
         let stem = url_stem(&camera.image_url).to_string();
         let bytes_for_save = bytes.clone();
-        let _ = tokio::task::spawn_blocking(move || {
+        drop(tokio::task::spawn_blocking(move || {
             save_image_rolling(&bytes_for_save, &stem, &save_path, max_snapshots);
-        });
+        }));
     }
 
     // Decode JPEG → RGBA8 → egui::ColorImage (on the tokio worker thread).
@@ -141,7 +141,7 @@ pub async fn fetch_camera_image(
 /// e.g. `https://…/Wide_Bay/bargara-davidson-east.jpg?ts` → `bargara-davidson-east`
 fn url_stem(image_url: &str) -> &str {
     let path = image_url.split('?').next().unwrap_or(image_url);
-    let filename = path.split('/').last().unwrap_or("camera");
+    let filename = path.split('/').next_back().unwrap_or("camera");
     filename.strip_suffix(".jpg").unwrap_or(filename)
 }
 
