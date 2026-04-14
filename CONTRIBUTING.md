@@ -13,6 +13,12 @@ Thanks for your interest in contributing to Traffic Camera Viewer.
 
 **Windows** — works out of the box after installing the Rust toolchain and VS Build Tools.
 
+Git for Windows defaults to `core.autocrlf=true`, which conflicts with this repository's
+`eol=lf` policy and causes spurious warnings from tools like `cz bump`. Fix it once per clone:
+```bash
+git config --local core.autocrlf input
+```
+
 **Linux (Debian/Ubuntu):**
 ```bash
 sudo apt install libgtk-3-dev libxkbcommon-dev \
