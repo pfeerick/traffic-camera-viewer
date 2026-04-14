@@ -1,0 +1,24 @@
+# Default: normalise line endings to LF in the repository,
+# check out as LF on all platforms.
+* text=auto eol=lf
+
+# Source and config files — always LF
+*.rs      text eol=lf
+*.toml    text eol=lf
+*.yaml    text eol=lf
+*.yml     text eol=lf
+*.md      text eol=lf
+*.json    text eol=lf
+*.sh      text eol=lf
+
+# Windows scripts — CRLF on checkout
+*.bat     text eol=crlf
+*.cmd     text eol=crlf
+*.ps1     text eol=crlf
+
+# Binaries — no line-ending processing
+*.jpg     binary
+*.jpeg    binary
+*.png     binary
+*.ico     binary
+*.exe     binary
