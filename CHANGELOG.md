@@ -1,5 +1,11 @@
 # Changelog
 
+## v0.5.3 (2026-04-15)
+
+### Refactor
+
+- remove all clippy suppressions by fixing root causes
+
 ## v0.5.2 (2026-04-14)
 
 ### Fix
