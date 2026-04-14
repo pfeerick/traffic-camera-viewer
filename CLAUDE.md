@@ -11,8 +11,9 @@ cargo build              # debug build
 cargo build --release    # release build (no console window on Windows)
 cargo run                # debug run
 cargo test               # unit tests
-cargo clippy -- -D warnings  # lint (must pass clean before committing)
-cargo fmt --check            # formatting check (CI enforces this)
+cargo clippy -- -D warnings                                      # lint (must pass clean before committing)
+cargo clippy --tests -- -W clippy::pedantic -W clippy::nursery   # zero warnings expected here too
+cargo fmt --check                                                 # formatting check (CI enforces this)
 ```
 
 ## Project Structure
@@ -73,6 +74,21 @@ repo's `eol=lf` policy and causes spurious CRLF warnings from `cz bump`. Fix onc
 git config --local core.autocrlf input  # normalise to LF on commit
 git config --local core.safecrlf false  # silence conversion warnings
 ```
+
+## Lint Policy
+
+CI enforces `cargo clippy -- -D warnings`. The project also targets zero warnings under
+`-W clippy::pedantic -W clippy::nursery` (what rust-analyzer surfaces in VS Code).
+
+Suppression strategy:
+- **Fix legitimate issues** in source (doc backticks, redundant closures, lossless casts, etc.)
+- **`[lints.clippy]`** in `Cargo.toml` documents intentional suppressions with explanations
+- **`#[allow(...)]`** attributes on specific functions (e.g. egui slider cast round-trips in
+  `settings::show`, pixel geometry casts in `grid::show`) so the suppression holds even when
+  clippy is invoked with explicit `-W` flags that would otherwise override `[lints.clippy]`
+
+When adding new UI code with egui sliders, the existing `#[allow]` on `settings::show` already
+covers the `as f64` / `as usize` slider pattern — no need to add new suppressions.
 
 ## CI / GitHub Actions
 
