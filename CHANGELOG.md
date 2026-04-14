@@ -1,5 +1,11 @@
 # Changelog
 
+## v0.5.1 (2026-04-14)
+
+### Fix
+
+- **ci**: merge release workflow and gate publish on lint/test
+
 ## v0.5.0 (2026-04-14)
 
 ### Feat
