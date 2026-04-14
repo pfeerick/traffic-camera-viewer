@@ -22,7 +22,8 @@ git config --local core.autocrlf input
 **Linux (Debian/Ubuntu):**
 ```bash
 sudo apt install libgtk-3-dev libxkbcommon-dev \
-  libxcb-render0-dev libxcb-shape0-dev libxcb-xfixes0-dev cmake
+  libxcb-render0-dev libxcb-shape0-dev libxcb-xfixes0-dev \
+  libwayland-dev cmake
 ```
 
 **macOS:**

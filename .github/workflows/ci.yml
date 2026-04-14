@@ -18,7 +18,8 @@ jobs:
         run: |
           sudo apt-get update
           sudo apt-get install -y libgtk-3-dev libxkbcommon-dev \
-            libxcb-render0-dev libxcb-shape0-dev libxcb-xfixes0-dev cmake
+            libxcb-render0-dev libxcb-shape0-dev libxcb-xfixes0-dev \
+            libwayland-dev cmake
       - name: Check formatting
         run: cargo fmt --check
       - name: Clippy
@@ -35,7 +36,8 @@ jobs:
         run: |
           sudo apt-get update
           sudo apt-get install -y libgtk-3-dev libxkbcommon-dev \
-            libxcb-render0-dev libxcb-shape0-dev libxcb-xfixes0-dev cmake
+            libxcb-render0-dev libxcb-shape0-dev libxcb-xfixes0-dev \
+            libwayland-dev cmake
       - name: Run tests
         run: cargo test
 
@@ -65,6 +67,7 @@ jobs:
         run: |
           sudo apt-get update
           sudo apt-get install -y libgtk-3-dev libxkbcommon-dev \
-            libxcb-render0-dev libxcb-shape0-dev libxcb-xfixes0-dev cmake
+            libxcb-render0-dev libxcb-shape0-dev libxcb-xfixes0-dev \
+            libwayland-dev cmake
       - name: Build
         run: cargo build --release --target ${{ matrix.target }}
