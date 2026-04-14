@@ -256,10 +256,11 @@ impl AppState {
 
     // ── Camera list management ─────────────────────────────────────────────
 
-    /// Rebuild `cameras` from `all_cameras` applying the current district filter.
-    /// All camera image states are reset to `Idle`.
+    /// Rebuild `cameras` from `all_cameras` applying the current district filter,
+    /// hidden-camera filter, and custom display order. All camera image states are
+    /// reset to `Idle`.
     pub fn rebuild_camera_list(&mut self) {
-        self.cameras = self
+        let mut cams: Vec<CameraState> = self
             .all_cameras
             .iter()
             .filter(|c| {
@@ -272,6 +273,19 @@ impl AppState {
                 last_image_hash: None,
             })
             .collect();
+
+        if !self.config.camera_order.is_empty() {
+            let order_map: std::collections::HashMap<u32, usize> = self
+                .config
+                .camera_order
+                .iter()
+                .enumerate()
+                .map(|(i, &id)| (id, i))
+                .collect();
+            cams.sort_by_key(|c| order_map.get(&c.info.id).copied().unwrap_or(usize::MAX));
+        }
+
+        self.cameras = cams;
     }
 
     /// Copy pending settings → active config, persist to disk, rebuild cameras,

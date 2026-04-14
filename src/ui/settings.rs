@@ -20,7 +20,7 @@ pub fn show(ui: &mut egui::Ui, state: &mut AppState) {
     egui::ScrollArea::vertical().show(ui, |ui| {
         // ── Districts ─────────────────────────────────────────────────────────
         egui::CollapsingHeader::new("Districts")
-            .default_open(true)
+            .default_open(false)
             .show(ui, |ui| {
                 if state.all_districts.is_empty() {
                     ui.label("Camera list not loaded yet.");
@@ -57,42 +57,105 @@ pub fn show(ui: &mut egui::Ui, state: &mut AppState) {
                     ui.label("Camera list not loaded yet.");
                 } else {
                     ui.label(
-                        egui::RichText::new("Uncheck to hide a camera from the grid.")
-                            .small()
-                            .color(egui::Color32::from_gray(140)),
+                        egui::RichText::new(
+                            "🔼/🔽 to reorder · uncheck to hide · takes effect on Apply",
+                        )
+                        .small()
+                        .color(egui::Color32::from_gray(140)),
                     );
                     ui.add_space(4.0);
 
-                    // Clone to avoid holding borrows on `state` during iteration.
+                    // Clone everything we need to avoid holding borrows on `state`.
                     let all_cameras = state.all_cameras.clone();
                     let selected_districts = state.pending_config.selected_districts.clone();
-                    // Only show cameras from districts that are currently selected.
-                    let mut active_districts: Vec<_> = selected_districts.iter().collect();
-                    active_districts.sort();
+                    let camera_order = state.pending_config.camera_order.clone();
+                    let multi_district = selected_districts.len() > 1;
 
-                    for district in &active_districts {
-                        let cams_in_district: Vec<_> = all_cameras
+                    // Build the ordered list of camera IDs for active districts
+                    // (hidden cameras are included so they keep their position).
+                    let active_ids: Vec<u32> = {
+                        // Cameras that belong to an active district.
+                        let active_cams: Vec<_> = all_cameras
                             .iter()
-                            .filter(|c| c.district == **district)
+                            .filter(|c| selected_districts.contains(&c.district))
                             .collect();
-                        if cams_in_district.is_empty() {
-                            continue;
-                        }
 
-                        ui.add_space(4.0);
-                        ui.label(egui::RichText::new(*district).strong().small());
-
-                        for cam in cams_in_district {
-                            let mut visible =
-                                !state.pending_config.hidden_camera_ids.contains(&cam.id);
-                            if ui.checkbox(&mut visible, &cam.name).changed() {
-                                if visible {
-                                    state.pending_config.hidden_camera_ids.remove(&cam.id);
-                                } else {
-                                    state.pending_config.hidden_camera_ids.insert(cam.id);
+                        if camera_order.is_empty() {
+                            // Default: district alphabetically, then camera name.
+                            let mut sorted = active_cams.clone();
+                            sorted.sort_by(|a, b| {
+                                a.district.cmp(&b.district).then(a.name.cmp(&b.name))
+                            });
+                            sorted.iter().map(|c| c.id).collect()
+                        } else {
+                            // Respect stored order; append new cameras at the end.
+                            let mut ids: Vec<u32> = camera_order
+                                .iter()
+                                .filter(|&&id| active_cams.iter().any(|c| c.id == id))
+                                .copied()
+                                .collect();
+                            for cam in &active_cams {
+                                if !camera_order.contains(&cam.id) {
+                                    ids.push(cam.id);
                                 }
                             }
+                            ids
                         }
+                    };
+
+                    let n = active_ids.len();
+                    for (pos, &cam_id) in active_ids.clone().iter().enumerate() {
+                        let Some(cam) = all_cameras.iter().find(|c| c.id == cam_id) else {
+                            continue;
+                        };
+
+                        ui.horizontal(|ui| {
+                            // ▲ / ▼ reorder buttons.
+                            if ui
+                                .add_enabled(pos > 0, egui::Button::new("🔼").small())
+                                .clicked()
+                            {
+                                let order = &mut state.pending_config.camera_order;
+                                if order.len() != n {
+                                    *order = active_ids.clone();
+                                }
+                                if let Some(i) = order.iter().position(|&id| id == cam_id)
+                                    && i > 0
+                                {
+                                    order.swap(i, i - 1);
+                                }
+                            }
+                            if ui
+                                .add_enabled(pos < n - 1, egui::Button::new("🔽").small())
+                                .clicked()
+                            {
+                                let order = &mut state.pending_config.camera_order;
+                                if order.len() != n {
+                                    *order = active_ids.clone();
+                                }
+                                if let Some(i) = order.iter().position(|&id| id == cam_id)
+                                    && i + 1 < order.len()
+                                {
+                                    order.swap(i, i + 1);
+                                }
+                            }
+
+                            // Visibility checkbox.
+                            let mut visible =
+                                !state.pending_config.hidden_camera_ids.contains(&cam_id);
+                            let label = if multi_district {
+                                format!("{} — {}", cam.name, cam.district)
+                            } else {
+                                cam.name.clone()
+                            };
+                            if ui.checkbox(&mut visible, label).changed() {
+                                if visible {
+                                    state.pending_config.hidden_camera_ids.remove(&cam_id);
+                                } else {
+                                    state.pending_config.hidden_camera_ids.insert(cam_id);
+                                }
+                            }
+                        });
                     }
                 }
             });

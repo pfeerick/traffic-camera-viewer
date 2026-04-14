@@ -34,6 +34,9 @@ pub struct AppConfig {
     pub app_background_rgb: [u8; 3],
     /// Camera IDs that have been manually hidden by the user.
     pub hidden_camera_ids: BTreeSet<u32>,
+    /// Desired display order: camera IDs in sequence. Cameras absent from this
+    /// list appear at the end in their natural order.
+    pub camera_order: Vec<u32>,
 }
 
 impl Default for AppConfig {
@@ -52,6 +55,7 @@ impl Default for AppConfig {
             camera_aspect_ratio: NATIVE_CAMERA_IMAGE_SIZE,
             app_background_rgb: [24, 24, 24],
             hidden_camera_ids: BTreeSet::new(),
+            camera_order: Vec::new(),
         }
     }
 }
