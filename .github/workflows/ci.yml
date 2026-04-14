@@ -116,6 +116,12 @@ jobs:
     permissions:
       contents: write
     steps:
+      # Checkout first (tags only) so the workspace clean doesn't wipe downloaded artifacts
+      - uses: actions/checkout@v6
+        if: startsWith(github.ref, 'refs/tags/v')
+        with:
+          fetch-depth: 0
+
       - uses: actions/download-artifact@v8
         with:
           path: artifacts
@@ -133,11 +139,6 @@ jobs:
           prerelease: true
           make_latest: false
           files: artifacts/*
-
-      - uses: actions/checkout@v6
-        if: startsWith(github.ref, 'refs/tags/v')
-        with:
-          fetch-depth: 0
 
       - name: Generate release notes
         if: startsWith(github.ref, 'refs/tags/v')
