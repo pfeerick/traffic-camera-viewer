@@ -1,0 +1,102 @@
+name: Release
+
+on:
+  workflow_run:
+    workflows: ["CI"]
+    types: [completed]
+    branches: [main]
+
+# Only one release can publish at a time; newer run cancels any in-progress one.
+concurrency:
+  group: release
+  cancel-in-progress: true
+
+jobs:
+  release:
+    name: Publish release
+    # Only run when CI passed; a failed build should never publish.
+    if: github.event.workflow_run.conclusion == 'success'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      actions: read   # required to download artifacts from the triggering run
+
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          fetch-depth: 0   # git-cliff needs full history; tag lookup needs tags
+          ref: ${{ github.event.workflow_run.head_sha }}
+
+      - uses: actions/download-artifact@v8
+        with:
+          run-id: ${{ github.event.workflow_run.id }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          path: artifacts
+          merge-multiple: true
+
+      - name: Detect version tag
+        id: tag
+        run: |
+          TAG=$(git tag --points-at ${{ github.event.workflow_run.head_sha }} \
+                | grep '^v' | head -1)
+          echo "version=${TAG}" >> $GITHUB_OUTPUT
+
+      # ── Rolling latest (no version tag on commit) ─────────────────────────
+
+      - name: Rolling latest release
+        if: steps.tag.outputs.version == ''
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release delete latest --cleanup-tag -y 2>/dev/null || true
+          gh release create latest \
+            --title "Latest Build" \
+            --notes $'Automated build from the latest commit on `main`.\nCommit: ${{ github.event.workflow_run.head_sha }}' \
+            --prerelease \
+            --repo ${{ github.repository }} \
+            artifacts/*
+
+      # ── Versioned release (v* tag found on commit) ────────────────────────
+
+      - name: Rename artifacts for versioned release
+        if: steps.tag.outputs.version != ''
+        run: |
+          VERSION="${{ steps.tag.outputs.version }}"
+          cd artifacts
+          for f in *; do
+            newname=$(echo "$f" | sed "s/traffic-camera-viewer-/traffic-camera-viewer-${VERSION}-/")
+            mv "$f" "$newname"
+          done
+
+      - name: Generate release notes
+        if: steps.tag.outputs.version != ''
+        uses: orhun/git-cliff-action@v4
+        with:
+          args: --latest --strip header --output release_notes.md
+
+      - name: Append downloads table to release notes
+        if: steps.tag.outputs.version != ''
+        run: |
+          VERSION="${{ steps.tag.outputs.version }}"
+          cat >> release_notes.md << EOF
+
+          ## Downloads
+
+          | Platform | File |
+          |----------|------|
+          | Windows (x86-64) | \`traffic-camera-viewer-${VERSION}-windows.exe\` |
+          | Linux (x86-64) | \`traffic-camera-viewer-${VERSION}-linux\` |
+          | macOS (Apple Silicon) | \`traffic-camera-viewer-${VERSION}-macos\` |
+          EOF
+
+      - name: Versioned release
+        if: steps.tag.outputs.version != ''
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release create "${{ steps.tag.outputs.version }}" \
+            --title "${{ steps.tag.outputs.version }}" \
+            --notes-file release_notes.md \
+            --latest \
+            --repo ${{ github.repository }} \
+            artifacts/*
