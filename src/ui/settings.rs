@@ -17,6 +17,40 @@ pub fn show(ui: &mut egui::Ui, state: &mut AppState) {
     ui.heading("Settings");
     ui.separator();
 
+    // ── Pinned footer (Apply / Cancel / version) ──────────────────────────────
+    // Must be declared before the ScrollArea so egui carves the space first.
+    egui::Panel::bottom("settings_footer")
+        .frame(
+            egui::Frame::new()
+                .fill(ui.visuals().panel_fill)
+                .inner_margin(egui::Margin::symmetric(8, 6)),
+        )
+        .show_inside(ui, |ui| {
+            ui.separator();
+            ui.add_space(2.0);
+            ui.horizontal(|ui| {
+                if ui.button("Apply").clicked() {
+                    state.apply_settings();
+                }
+                if ui.button("Cancel").clicked() {
+                    state.pending_config = state.config.clone();
+                    state.settings_open = false;
+                }
+                ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
+                    ui.label(
+                        egui::RichText::new(concat!(
+                            "v",
+                            env!("CARGO_PKG_VERSION"),
+                            " · built ",
+                            env!("BUILD_DATE"),
+                        ))
+                        .small()
+                        .color(egui::Color32::from_gray(100)),
+                    );
+                });
+            });
+        });
+
     egui::ScrollArea::vertical().show(ui, |ui| {
         // ── Districts ─────────────────────────────────────────────────────────
         egui::CollapsingHeader::new("Districts")
@@ -353,36 +387,5 @@ pub fn show(ui: &mut egui::Ui, state: &mut AppState) {
                     }
                 }
             });
-
-        ui.add_space(8.0);
-        ui.separator();
-
-        // ── Apply / Cancel ────────────────────────────────────────────────────
-        ui.horizontal(|ui| {
-            if ui.button("Apply").clicked() {
-                state.apply_settings();
-            }
-            if ui.button("Cancel").clicked() {
-                state.pending_config = state.config.clone();
-                state.settings_open = false;
-            }
-        });
-
-        // Version / build info footer.
-        ui.add_space(12.0);
-        ui.separator();
-        ui.add_space(4.0);
-        ui.with_layout(egui::Layout::bottom_up(egui::Align::Center), |ui| {
-            ui.label(
-                egui::RichText::new(concat!(
-                    "v",
-                    env!("CARGO_PKG_VERSION"),
-                    " · built ",
-                    env!("BUILD_DATE"),
-                ))
-                .small()
-                .color(egui::Color32::from_gray(100)),
-            );
-        });
     });
 }
