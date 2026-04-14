@@ -1,2 +1,4 @@
 [toolchain]
+# Rust edition 2024 requires >= 1.85. Tracking stable (not a pinned version)
+# is intentional — this is a binary app with no MSRV contract to maintain.
 channel = "stable"
