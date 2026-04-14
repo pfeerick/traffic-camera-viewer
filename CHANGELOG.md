@@ -1,5 +1,17 @@
 # Changelog
 
+## v0.5.0 (2026-04-14)
+
+### Feat
+
+- **ui**: add camera reordering and collapse settings sections by default
+- **ui**: add per-camera hide/show via context menu and settings
+- **ui**: add right-click context menu with per-camera refresh
+
+### Fix
+
+- persist window position, size, and maximised state across sessions
+
 ## v0.4.0 (2026-04-14)
 
 ### Feat
