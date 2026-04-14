@@ -9,12 +9,19 @@ Thanks for your interest in contributing to Traffic Camera Viewer.
 - Rust toolchain (stable) via `rustup`
 - `cargo` available on PATH
 
+### Git configuration (all platforms)
+
+Run these once after cloning:
+```bash
+git config --local push.followTags true  # push tags alongside commits automatically
+git config --local push.atomic true      # push branch + tags atomically (all or nothing)
+```
+
 ### Platform-specific build dependencies
 
 **Windows** — works out of the box after installing the Rust toolchain and VS Build Tools.
 
-Git for Windows defaults to `core.autocrlf=true`, which conflicts with this repository's
-`eol=lf` policy and causes spurious warnings from tools like `cz bump`. Fix it once per clone:
+Also run this to prevent spurious CRLF warnings from `cz bump`:
 ```bash
 git config --local core.autocrlf input
 ```
