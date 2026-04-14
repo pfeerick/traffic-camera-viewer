@@ -1,4 +1,5 @@
 use crate::app::AppState;
+use crate::config::TitleAlign;
 use std::path::PathBuf;
 
 fn color_swatch(ui: &mut egui::Ui, rgb: [u8; 3]) {
@@ -247,6 +248,32 @@ fn show_display(ui: &mut egui::Ui, state: &mut AppState) {
             .integer()
             .suffix(" pt"),
         );
+    });
+
+    ui.add_space(4.0);
+    ui.label("Camera title alignment:");
+    ui.add_enabled_ui(state.pending_config.show_camera_titles, |ui| {
+        ui.horizontal(|ui| {
+            let a = &mut state.pending_config.camera_title_align;
+            if ui
+                .selectable_label(*a == TitleAlign::Left, "Left")
+                .clicked()
+            {
+                *a = TitleAlign::Left;
+            }
+            if ui
+                .selectable_label(*a == TitleAlign::Center, "Center")
+                .clicked()
+            {
+                *a = TitleAlign::Center;
+            }
+            if ui
+                .selectable_label(*a == TitleAlign::Right, "Right")
+                .clicked()
+            {
+                *a = TitleAlign::Right;
+            }
+        });
     });
 
     ui.add_space(4.0);

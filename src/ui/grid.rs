@@ -1,5 +1,6 @@
 use crate::app::AppState;
 use crate::camera::{CameraState, ImageState};
+use crate::config::TitleAlign;
 
 pub enum GridAction {
     RefreshCamera(u32),
@@ -45,6 +46,11 @@ pub fn show(ui: &mut egui::Ui, state: &AppState) -> Option<GridAction> {
     let aspect_h_over_w = (f32::from(aspect_h) / f32::from(aspect_w)).max(0.1);
     let [title_r, title_g, title_b] = state.config.camera_title_rgb;
     let title_color = egui::Color32::from_rgb(title_r, title_g, title_b);
+    let title_align = match state.config.camera_title_align {
+        TitleAlign::Left => egui::Align::Min,
+        TitleAlign::Center => egui::Align::Center,
+        TitleAlign::Right => egui::Align::Max,
+    };
 
     egui::ScrollArea::vertical()
         .auto_shrink([false, false])
@@ -77,13 +83,15 @@ pub fn show(ui: &mut egui::Ui, state: &AppState) -> Option<GridAction> {
 
                             // Optional title block above each image.
                             if state.config.show_camera_titles {
-                                ui.label(
-                                    egui::RichText::new(&camera.info.locality)
-                                        .strong()
-                                        .size(state.config.camera_title_font_size)
-                                        .color(title_color),
-                                )
-                                .on_hover_text(&camera.info.name);
+                                ui.with_layout(egui::Layout::top_down(title_align), |ui| {
+                                    ui.label(
+                                        egui::RichText::new(&camera.info.locality)
+                                            .strong()
+                                            .size(state.config.camera_title_font_size)
+                                            .color(title_color),
+                                    )
+                                    .on_hover_text(&camera.info.name);
+                                });
                             }
 
                             let response = render_tile(ui, camera, cell_size);

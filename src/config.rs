@@ -2,6 +2,16 @@ use serde::{Deserialize, Serialize};
 use std::collections::BTreeSet;
 use std::path::PathBuf;
 
+/// Horizontal alignment for camera title text above each tile.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, Default)]
+#[serde(rename_all = "lowercase")]
+pub enum TitleAlign {
+    #[default]
+    Left,
+    Center,
+    Right,
+}
+
 const APP_NAME: &str = "traffic-camera-viewer";
 const NATIVE_CAMERA_IMAGE_SIZE: [u16; 2] = [320, 256];
 
@@ -28,6 +38,8 @@ pub struct AppConfig {
     pub camera_title_font_size: f32,
     /// Camera title text color as RGB.
     pub camera_title_rgb: [u8; 3],
+    /// Horizontal alignment of the camera title text.
+    pub camera_title_align: TitleAlign,
     /// Camera image tile aspect ratio as width:height.
     pub camera_aspect_ratio: [u16; 2],
     /// Grid/background color as RGB (does not affect status bar panel).
@@ -52,6 +64,7 @@ impl Default for AppConfig {
             show_camera_titles: true,
             camera_title_font_size: 12.0,
             camera_title_rgb: [220, 220, 220],
+            camera_title_align: TitleAlign::Left,
             camera_aspect_ratio: NATIVE_CAMERA_IMAGE_SIZE,
             app_background_rgb: [24, 24, 24],
             hidden_camera_ids: BTreeSet::new(),
