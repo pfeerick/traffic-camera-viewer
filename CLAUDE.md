@@ -94,11 +94,13 @@ covers the `as f64` / `as usize` slider pattern — no need to add new suppressi
 
 | Workflow | Trigger | Jobs |
 |----------|---------|------|
-| `ci.yml` | every push + PR | lint, test, build (all 3 platforms) |
-| `release.yml` | push to `main` or `v*` tag | build artifacts → publish GitHub Release |
+| `ci.yml` | every push + PR (all branches) and `v*` tags | lint + test (non-tags only), build (all 3 platforms), release (main + tags only) |
 
-Push to `main` → updates rolling `latest` pre-release.
-Push a `v*` tag (via `cz bump`) → creates a versioned release with auto-generated notes.
+Concurrency is grouped by `github.ref`, so `git push --follow-tags` fires two
+independent runs (one for `main`, one for the tag) that never cancel each other.
+
+Push to `main` → lint/test/build run, rolling `latest` pre-release is updated.
+Push a `v*` tag (via `cz bump`) → build runs, versioned release is created with auto-generated notes. Lint/test are skipped (already passed on the main-branch run).
 
 Release platforms: Windows x86_64, Linux x86_64, macOS arm64.
 macOS Intel (`macos-15-intel`) is commented out in the matrix — uncomment to re-enable.
