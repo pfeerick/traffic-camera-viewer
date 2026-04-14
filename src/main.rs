@@ -25,7 +25,10 @@ fn main() {
 
     let native_options = eframe::NativeOptions {
         viewport: egui::ViewportBuilder::default()
-            .with_title("QLD Traffic Camera Viewer")
+            .with_title(concat!(
+                "QLD Traffic Camera Viewer v",
+                env!("CARGO_PKG_VERSION")
+            ))
             .with_inner_size([1200.0_f32, 800.0_f32])
             .with_min_inner_size([600.0_f32, 400.0_f32]),
         ..Default::default()

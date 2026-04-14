@@ -255,8 +255,21 @@ pub fn show(ui: &mut egui::Ui, state: &mut AppState) {
             }
         });
 
-        // Extra tail padding so the final controls can scroll slightly above
-        // the panel edge.
-        ui.add_space(18.0);
+        // Version / build info footer.
+        ui.add_space(12.0);
+        ui.separator();
+        ui.add_space(4.0);
+        ui.with_layout(egui::Layout::bottom_up(egui::Align::Center), |ui| {
+            ui.label(
+                egui::RichText::new(concat!(
+                    "v",
+                    env!("CARGO_PKG_VERSION"),
+                    " · built ",
+                    env!("BUILD_DATE"),
+                ))
+                .small()
+                .color(egui::Color32::from_gray(100)),
+            );
+        });
     });
 }
