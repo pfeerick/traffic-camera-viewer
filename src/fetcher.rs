@@ -1,6 +1,8 @@
 use crate::camera::CameraInfo;
 use reqwest::Client;
 use serde::Deserialize;
+use std::collections::hash_map::DefaultHasher;
+use std::hash::{Hash, Hasher};
 use std::path::{Path, PathBuf};
 use thiserror::Error;
 
@@ -80,6 +82,12 @@ pub async fn fetch_camera_list(client: &HttpClient) -> Result<Vec<CameraInfo>, F
         .collect())
 }
 
+#[derive(Clone)]
+pub enum CameraImageFetchOutcome {
+    Changed { hash: u64, image: egui::ColorImage },
+    Unchanged { hash: u64 },
+}
+
 /// Fetch a single camera image, optionally save to disk, and decode to an
 /// `egui::ColorImage` ready for GPU upload on the UI thread.
 pub async fn fetch_camera_image(
@@ -88,7 +96,8 @@ pub async fn fetch_camera_image(
     save_to_disk: bool,
     save_path: PathBuf,
     max_snapshots: usize,
-) -> Result<egui::ColorImage, FetchError> {
+    previous_hash: Option<u64>,
+) -> Result<CameraImageFetchOutcome, FetchError> {
     // Append unix-millisecond timestamp to bust CDN caches.
     let ts = std::time::SystemTime::now()
         .duration_since(std::time::UNIX_EPOCH)
@@ -97,6 +106,14 @@ pub async fn fetch_camera_image(
     let url = format!("{}?{}", camera.image_url, ts);
 
     let bytes = client.0.get(&url).send().await?.bytes().await?;
+
+    let mut hasher = DefaultHasher::new();
+    bytes.hash(&mut hasher);
+    let hash = hasher.finish();
+
+    if previous_hash == Some(hash) {
+        return Ok(CameraImageFetchOutcome::Unchanged { hash });
+    }
 
     // Optional disk save — fire and forget, errors are logged not propagated.
     if save_to_disk && !save_path.as_os_str().is_empty() {
@@ -112,10 +129,10 @@ pub async fn fetch_camera_image(
         .map_err(|e| FetchError::Decode(e.to_string()))?;
     let rgba = dyn_img.to_rgba8();
     let (w, h) = rgba.dimensions();
-    Ok(egui::ColorImage::from_rgba_unmultiplied(
-        [w as usize, h as usize],
-        rgba.as_raw(),
-    ))
+    Ok(CameraImageFetchOutcome::Changed {
+        hash,
+        image: egui::ColorImage::from_rgba_unmultiplied([w as usize, h as usize], rgba.as_raw()),
+    })
 }
 
 // ── Disk save helpers ────────────────────────────────────────────────────────
@@ -167,7 +184,10 @@ fn try_save_image_rolling(
         let to_delete = matches.len() - max_snapshots;
         for entry in matches.iter().take(to_delete) {
             if let Err(e) = std::fs::remove_file(entry.path()) {
-                log::warn!("Failed to delete old snapshot {}: {e}", entry.path().display());
+                log::warn!(
+                    "Failed to delete old snapshot {}: {e}",
+                    entry.path().display()
+                );
             }
         }
     }

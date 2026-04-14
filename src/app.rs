@@ -4,7 +4,9 @@ use std::path::PathBuf;
 
 use crate::camera::{CameraInfo, CameraState, ImageState};
 use crate::config::{AppConfig, load_config, save_config};
-use crate::fetcher::{FetchError, HttpClient, fetch_camera_image, fetch_camera_list};
+use crate::fetcher::{
+    CameraImageFetchOutcome, FetchError, HttpClient, fetch_camera_image, fetch_camera_list,
+};
 
 pub struct AppState {
     pub config: AppConfig,
@@ -92,14 +94,29 @@ impl AppState {
             let client = self.client.clone();
             let ctx2 = ctx.clone();
             let save_path2 = save_path.clone();
+            let previous_hash = cam.last_image_hash;
+            let previous_texture = if let ImageState::Ready(handle) = &cam.image_state {
+                Some(handle.clone())
+            } else {
+                None
+            };
 
-            cam.image_state = ImageState::Loading(Promise::spawn_async(async move {
-                let result =
-                    fetch_camera_image(&client, &cam_info, save_to_disk, save_path2, max_snapshots)
-                        .await;
-                ctx2.request_repaint();
-                result
-            }));
+            cam.image_state = ImageState::Loading {
+                promise: Promise::spawn_async(async move {
+                    let result = fetch_camera_image(
+                        &client,
+                        &cam_info,
+                        save_to_disk,
+                        save_path2,
+                        max_snapshots,
+                        previous_hash,
+                    )
+                    .await;
+                    ctx2.request_repaint();
+                    result
+                }),
+                previous: previous_texture,
+            };
         }
     }
 
@@ -161,25 +178,38 @@ impl AppState {
             // Extract the result (cloning what we need) while holding an
             // immutable borrow of image_state, then release that borrow before
             // mutating image_state below.
-            let result = if let ImageState::Loading(p) = &cam.image_state {
-                p.ready().map(|r| match r {
-                    Ok(img) => Ok(img.clone()),
-                    Err(e) => Err(e.to_string()),
-                })
-            } else {
-                None
-            };
+            let (result, previous_texture) =
+                if let ImageState::Loading { promise, previous } = &cam.image_state {
+                    (
+                        promise.ready().map(|r| match r {
+                            Ok(outcome) => Ok(outcome.clone()),
+                            Err(e) => Err(e.to_string()),
+                        }),
+                        previous.clone(),
+                    )
+                } else {
+                    (None, None)
+                };
 
             if let Some(result) = result {
                 cam.image_state = match result {
-                    Ok(color_image) => {
+                    Ok(CameraImageFetchOutcome::Changed { hash, image }) => {
+                        cam.last_image_hash = Some(hash);
                         // Texture upload MUST happen on the UI thread — this is it.
                         let handle = ctx.load_texture(
                             format!("cam_{}", cam.info.id),
-                            color_image,
+                            image,
                             egui::TextureOptions::LINEAR,
                         );
                         ImageState::Ready(handle)
+                    }
+                    Ok(CameraImageFetchOutcome::Unchanged { hash }) => {
+                        cam.last_image_hash = Some(hash);
+                        if let Some(handle) = previous_texture {
+                            ImageState::Ready(handle)
+                        } else {
+                            ImageState::Idle
+                        }
                     }
                     Err(e) => ImageState::Error(e),
                 };
@@ -199,6 +229,7 @@ impl AppState {
             .map(|c| CameraState {
                 info: c.clone(),
                 image_state: ImageState::Idle,
+                last_image_hash: None,
             })
             .collect();
     }

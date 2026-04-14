@@ -91,21 +91,31 @@ pub fn show(ui: &mut egui::Ui, state: &mut AppState) {
                                     response.on_hover_text(&camera_name);
                                 }
 
-                                ImageState::Loading(_) => {
-                                    let (rect, response) =
-                                        ui.allocate_exact_size(cell_size, egui::Sense::hover());
-                                    ui.painter().rect_filled(
-                                        rect,
-                                        4.0,
-                                        egui::Color32::from_gray(40),
-                                    );
-                                    // Overlay spinner in the centre of the placeholder.
-                                    let spinner_rect = egui::Rect::from_center_size(
-                                        rect.center(),
-                                        egui::vec2(32.0, 32.0),
-                                    );
-                                    ui.put(spinner_rect, egui::Spinner::new());
-                                    response.on_hover_text(&camera_name);
+                                ImageState::Loading { previous, .. } => {
+                                    if let Some(handle) = previous {
+                                        let sized = egui::load::SizedTexture::from_handle(handle);
+                                        ui.add(
+                                            egui::Image::new(sized)
+                                                .fit_to_exact_size(cell_size)
+                                                .maintain_aspect_ratio(true),
+                                        )
+                                        .on_hover_text(&camera_name);
+                                    } else {
+                                        let (rect, response) =
+                                            ui.allocate_exact_size(cell_size, egui::Sense::hover());
+                                        ui.painter().rect_filled(
+                                            rect,
+                                            4.0,
+                                            egui::Color32::from_gray(40),
+                                        );
+                                        // Overlay spinner in the centre of the placeholder.
+                                        let spinner_rect = egui::Rect::from_center_size(
+                                            rect.center(),
+                                            egui::vec2(32.0, 32.0),
+                                        );
+                                        ui.put(spinner_rect, egui::Spinner::new());
+                                        response.on_hover_text(&camera_name);
+                                    }
                                 }
 
                                 ImageState::Ready(handle) => {
