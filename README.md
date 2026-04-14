@@ -46,3 +46,8 @@ Camera metadata is loaded from:
 
 This project is licensed under the GNU General Public License v3.0.
 See [LICENSE](LICENSE) for the full text.
+
+## Attribution
+
+Application icon — [CCTV](https://pictogrammers.com/library/mdi/icon/cctv/) by
+[Material Design Icons](https://pictogrammers.com/library/mdi/), Apache 2.0.
