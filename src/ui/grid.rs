@@ -1,7 +1,13 @@
 use crate::app::AppState;
 use crate::camera::ImageState;
 
-pub fn show(ui: &mut egui::Ui, state: &mut AppState) {
+pub enum GridAction {
+    RefreshCamera(u32),
+}
+
+pub fn show(ui: &mut egui::Ui, state: &mut AppState) -> Option<GridAction> {
+    let mut action: Option<GridAction> = None;
+
     // Guard against tiny bottom-edge bleed when scrolled content meets the
     // status bar panel boundary.
     let mut clip_rect = ui.clip_rect();
@@ -27,7 +33,7 @@ pub fn show(ui: &mut egui::Ui, state: &mut AppState) {
                 ui.label("No cameras selected. Open Settings to choose a district.");
             }
         });
-        return;
+        return None;
     }
 
     // ── Scrollable camera grid ────────────────────────────────────────────────
@@ -59,6 +65,7 @@ pub fn show(ui: &mut egui::Ui, state: &mut AppState) {
 
                 ui.horizontal(|ui| {
                     for idx in row_start..row_end {
+                        let camera_id = state.cameras[idx].info.id;
                         let camera_name = state.cameras[idx].info.name.clone();
                         let camera_locality = state.cameras[idx].info.locality.clone();
 
@@ -78,31 +85,50 @@ pub fn show(ui: &mut egui::Ui, state: &mut AppState) {
                                 .on_hover_text(&camera_name);
                             }
 
-                            // Image area
-                            match &state.cameras[idx].image_state {
+                            // Image area — capture a single Response from each branch
+                            // so we can attach hover text and the context menu once.
+                            let response = match &state.cameras[idx].image_state {
                                 ImageState::Idle => {
                                     let (rect, response) =
-                                        ui.allocate_exact_size(cell_size, egui::Sense::hover());
+                                        ui.allocate_exact_size(cell_size, egui::Sense::click());
                                     ui.painter().rect_filled(
                                         rect,
                                         4.0,
                                         egui::Color32::from_gray(40),
                                     );
-                                    response.on_hover_text(&camera_name);
+                                    response
                                 }
 
                                 ImageState::Loading { previous, .. } => {
                                     if let Some(handle) = previous {
                                         let sized = egui::load::SizedTexture::from_handle(handle);
-                                        ui.add(
+                                        let response = ui.add(
                                             egui::Image::new(sized)
                                                 .fit_to_exact_size(cell_size)
-                                                .maintain_aspect_ratio(true),
-                                        )
-                                        .on_hover_text(&camera_name);
+                                                .maintain_aspect_ratio(true)
+                                                .sense(egui::Sense::click()),
+                                        );
+                                        // Overlay a small spinner in the bottom-right corner
+                                        // to signal that a refresh is in progress.
+                                        let spinner_size = (cell_w * 0.12).clamp(14.0, 28.0);
+                                        let margin = spinner_size * 0.4;
+                                        let spinner_center = response.rect.max
+                                            - egui::vec2(
+                                                spinner_size / 2.0 + margin,
+                                                spinner_size / 2.0 + margin,
+                                            );
+                                        let spinner_rect = egui::Rect::from_center_size(
+                                            spinner_center,
+                                            egui::vec2(spinner_size, spinner_size),
+                                        );
+                                        ui.put(
+                                            spinner_rect,
+                                            egui::Spinner::new().size(spinner_size),
+                                        );
+                                        response
                                     } else {
                                         let (rect, response) =
-                                            ui.allocate_exact_size(cell_size, egui::Sense::hover());
+                                            ui.allocate_exact_size(cell_size, egui::Sense::click());
                                         ui.painter().rect_filled(
                                             rect,
                                             4.0,
@@ -114,7 +140,7 @@ pub fn show(ui: &mut egui::Ui, state: &mut AppState) {
                                             egui::vec2(32.0, 32.0),
                                         );
                                         ui.put(spinner_rect, egui::Spinner::new());
-                                        response.on_hover_text(&camera_name);
+                                        response
                                     }
                                 }
 
@@ -123,14 +149,14 @@ pub fn show(ui: &mut egui::Ui, state: &mut AppState) {
                                     ui.add(
                                         egui::Image::new(sized)
                                             .fit_to_exact_size(cell_size)
-                                            .maintain_aspect_ratio(true),
+                                            .maintain_aspect_ratio(true)
+                                            .sense(egui::Sense::click()),
                                     )
-                                    .on_hover_text(&camera_name);
                                 }
 
                                 ImageState::Error(msg) => {
                                     let (rect, response) =
-                                        ui.allocate_exact_size(cell_size, egui::Sense::hover());
+                                        ui.allocate_exact_size(cell_size, egui::Sense::click());
                                     ui.painter().rect_filled(
                                         rect,
                                         4.0,
@@ -143,9 +169,17 @@ pub fn show(ui: &mut egui::Ui, state: &mut AppState) {
                                         egui::FontId::proportional(11.0),
                                         egui::Color32::WHITE,
                                     );
-                                    response.on_hover_text(&camera_name);
+                                    response
                                 }
-                            }
+                            };
+
+                            let response = response.on_hover_text(&camera_name);
+                            response.context_menu(|ui| {
+                                if ui.button("Refresh").clicked() {
+                                    action = Some(GridAction::RefreshCamera(camera_id));
+                                    ui.close();
+                                }
+                            });
                         });
 
                         // Add horizontal gap between columns (except after the last one).
@@ -161,4 +195,6 @@ pub fn show(ui: &mut egui::Ui, state: &mut AppState) {
                 row_start = row_end;
             }
         });
+
+    action
 }

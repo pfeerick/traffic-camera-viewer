@@ -217,6 +217,43 @@ impl AppState {
         }
     }
 
+    /// Spawn an image fetch promise for a single camera by ID, without
+    /// disturbing the global refresh timer or other cameras.
+    pub fn trigger_refresh_single(&mut self, ctx: &egui::Context, camera_id: u32) {
+        let save_to_disk = self.config.save_to_disk;
+        let max_snapshots = self.config.max_snapshots;
+        let save_path = PathBuf::from(&self.config.save_path);
+
+        if let Some(cam) = self.cameras.iter_mut().find(|c| c.info.id == camera_id) {
+            let cam_info = cam.info.clone();
+            let client = self.client.clone();
+            let ctx2 = ctx.clone();
+            let previous_hash = cam.last_image_hash;
+            let previous_texture = if let ImageState::Ready(handle) = &cam.image_state {
+                Some(handle.clone())
+            } else {
+                None
+            };
+
+            cam.image_state = ImageState::Loading {
+                promise: Promise::spawn_async(async move {
+                    let result = fetch_camera_image(
+                        &client,
+                        &cam_info,
+                        save_to_disk,
+                        save_path,
+                        max_snapshots,
+                        previous_hash,
+                    )
+                    .await;
+                    ctx2.request_repaint();
+                    result
+                }),
+                previous: previous_texture,
+            };
+        }
+    }
+
     // ── Camera list management ─────────────────────────────────────────────
 
     /// Rebuild `cameras` from `all_cameras` applying the current district filter.
@@ -283,10 +320,20 @@ impl eframe::App for AppState {
 
         // Remaining area → camera grid.
         let available = ui.available_size();
-        ui.allocate_ui_with_layout(available, egui::Layout::top_down(egui::Align::Min), |ui| {
-            ui.set_clip_rect(ui.max_rect());
-            crate::ui::grid::show(ui, self);
-        });
+        let grid_action = ui
+            .allocate_ui_with_layout(available, egui::Layout::top_down(egui::Align::Min), |ui| {
+                ui.set_clip_rect(ui.max_rect());
+                crate::ui::grid::show(ui, self)
+            })
+            .inner;
+
+        if let Some(action) = grid_action {
+            match action {
+                crate::ui::grid::GridAction::RefreshCamera(id) => {
+                    self.trigger_refresh_single(&ctx, id);
+                }
+            }
+        }
     }
 
     fn on_exit(&mut self, _gl: Option<&eframe::glow::Context>) {
