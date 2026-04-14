@@ -14,26 +14,30 @@ concurrency:
 
 jobs:
   build:
-    name: Build (${{ matrix.target }})
+    name: Build (${{ matrix.name }})
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
       matrix:
         include:
-          - target: x86_64-pc-windows-msvc
+          - name: Windows
+            target: x86_64-pc-windows-msvc
             os: windows-latest
             bin: traffic-camera-viewer.exe
             artifact: traffic-camera-viewer-windows-x86_64.exe
-          - target: x86_64-unknown-linux-gnu
+          - name: Linux
+            target: x86_64-unknown-linux-gnu
             os: ubuntu-latest
             bin: traffic-camera-viewer
             artifact: traffic-camera-viewer-linux-x86_64
-          - target: aarch64-apple-darwin
+          - name: macOS
+            target: aarch64-apple-darwin
             os: macos-latest
             bin: traffic-camera-viewer
             artifact: traffic-camera-viewer-macos-arm64
           # Uncomment to add macOS Intel builds:
-          # - target: x86_64-apple-darwin
+          # - name: macOS (Intel)
+          #   target: x86_64-apple-darwin
           #   os: macos-15-intel
           #   bin: traffic-camera-viewer
           #   artifact: traffic-camera-viewer-macos-x86_64
