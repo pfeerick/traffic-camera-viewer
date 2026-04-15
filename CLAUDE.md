@@ -28,7 +28,7 @@ src/
   ui/
     mod.rs
     grid.rs     — scrollable camera image grid
-    settings.rs — settings side panel (Districts, Display, Disk Save)
+    settings.rs — settings side panel (Districts, Cameras, Display, Disk Save)
     statusbar.rs — refresh controls, countdown progress bar
 ```
 
@@ -78,7 +78,8 @@ git config --local core.safecrlf false  # silence conversion warnings
 ## Lint Policy
 
 CI enforces `cargo clippy -- -D warnings`. The project also targets zero warnings under
-`-W clippy::pedantic -W clippy::nursery` (what rust-analyzer surfaces in VS Code).
+`-W clippy::pedantic -W clippy::nursery` (what rust-analyzer surfaces in VS Code) — this is
+a local development guideline, not a CI gate.
 
 Prefer fixing the code over silencing lints. When a suppression is truly unavoidable, use a
 narrow inline `#[allow(...)]` on the exact line with an explanatory comment. There is no

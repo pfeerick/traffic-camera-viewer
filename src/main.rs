@@ -28,6 +28,10 @@ fn load_icon() -> egui::IconData {
 
 fn main() {
     env_logger::init();
+    log::info!(
+        "Traffic Camera Viewer v{} starting",
+        env!("CARGO_PKG_VERSION")
+    );
 
     // Build the Tokio runtime BEFORE handing control to eframe.
     // rt.enter() installs the runtime context on this thread, making

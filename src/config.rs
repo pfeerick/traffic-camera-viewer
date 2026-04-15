@@ -85,7 +85,13 @@ fn default_save_path() -> String {
 }
 
 pub fn load_config() -> AppConfig {
-    confy::load(APP_NAME, None).unwrap_or_default()
+    match confy::load(APP_NAME, None) {
+        Ok(cfg) => cfg,
+        Err(e) => {
+            log::warn!("Failed to load config, using defaults: {e}");
+            AppConfig::default()
+        }
+    }
 }
 
 pub fn save_config(cfg: &AppConfig) {
