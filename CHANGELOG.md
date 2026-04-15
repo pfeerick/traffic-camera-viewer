@@ -1,5 +1,15 @@
 # Changelog
 
+## v0.6.0 (2026-04-15)
+
+### Feat
+
+- **ui**: add camera title alignment control (left/center/right)
+
+### Refactor
+
+- log config load failures and add startup version log
+
 ## v0.5.3 (2026-04-15)
 
 ### Refactor
