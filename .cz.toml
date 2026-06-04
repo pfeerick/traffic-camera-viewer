@@ -2,6 +2,11 @@
 name = "cz_conventional_commits"
 version_scheme = "semver"
 version_provider = "cargo"
+version_files = [
+    "src-tauri/Cargo.toml",
+    "src-tauri/tauri.conf.json",
+    "package.json",
+]
 tag_format = "v$version"
 update_changelog_on_bump = true
 bump_message = "chore(release): bump version $current_version to $new_version"
