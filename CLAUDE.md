@@ -4,38 +4,97 @@
      (new modules, changed tooling, new workflows, dependency updates, architectural decisions).
      At the start of each session, verify this file reflects current project state. -->
 
-## Build & Run
+## Architecture
 
-```bash
-cargo build              # debug build
-cargo build --release    # release build (no console window on Windows)
-cargo run                # debug run
-cargo test               # unit tests
-cargo clippy -- -D warnings                                      # lint (must pass clean before committing)
-cargo clippy --tests -- -W clippy::pedantic -W clippy::nursery   # zero warnings expected here too
-cargo fmt --check                                                 # formatting check (CI enforces this)
+Tauri v2 desktop app + Bun web server sharing a Svelte frontend.
+
+```
+Desktop:  Svelte SPA ←→ Tauri invoke() ←→ Rust commands  (WebView2 + single .exe)
+Web:      Svelte SPA ←→ fetch('/api/...') ←→ Bun server   (bun server/index.ts)
 ```
 
 ## Project Structure
 
 ```
-src/
-  main.rs       — tokio runtime setup, eframe::run_native
-  app.rs        — AppState, eframe::App impl, refresh timer, promise polling
-  camera.rs     — CameraInfo, CameraState, ImageState enum
-  config.rs     — AppConfig (confy-persisted TOML), load/save
-  fetcher.rs    — HttpClient, async GeoJSON + image fetch, rolling disk save
-  ui/
-    mod.rs
-    grid.rs     — scrollable camera image grid
-    settings.rs — settings side panel (Districts, Cameras, Display, Disk Save)
-    statusbar.rs — refresh controls, countdown progress bar
+src-tauri/          — Tauri v2 Rust crate (backend)
+  src/
+    main.rs         — entry point
+    lib.rs          — AppState, tauri builder, command registration
+    camera.rs       — CameraInfo struct
+    config.rs       — AppConfig, JSON load/save
+    fetcher.rs      — HTTP fetch (GeoJSON + images), disk save
+    error.rs        — AppError (serde-serializable for IPC)
+    commands/       — Tauri command handlers
+      camera.rs     — get_camera_list, refresh_camera_list, fetch_image
+      config.rs     — get_config, save_config
+      disk.rs       — clear_cache, get_cache_info
+  capabilities/     — Tauri v2 permission grants
+  icons/            — app icon set (generated)
+  Cargo.toml
+  build.rs
+  tauri.conf.json
+
+src/                — Svelte frontend (shared by Tauri + web)
+  App.svelte        — root component: load config → load cameras → start timer
+  main.ts           — Svelte mount
+  app.css           — global styles
+  lib/
+    api/
+      index.ts      — environment detection: `isTauri`, exports `api`
+      types.ts      — TypeScript mirrors of Rust structs
+      tauri.ts      — invoke() wrappers (Tauri mode)
+      web.ts        — fetch('/api/...') wrappers (web mode)
+    stores/
+      config.ts     — appConfig, pendingConfig, applyConfig(), cancelConfig()
+      cameras.ts    — allCameras, visibleCameras, cameraImages
+      refresh.ts    — lastRefresh, countdown, triggerRefreshAll()
+    components/
+      CameraGrid.svelte
+      CameraCell.svelte     — idle/loading/ready/error + context menu
+      StatusBar.svelte
+      SettingsPanel.svelte
+      settings/
+        DistrictsSection.svelte
+        CamerasSection.svelte
+        DisplaySection.svelte
+        DiskSaveSection.svelte
+
+server/             — Bun HTTP server (web mode only)
+  index.ts          — Bun.serve() + static file serving from dist/
+  routes/           — API route handlers
+  services/         — fetcher, disk save, config persistence
 ```
 
-Config is persisted by `confy` at:
-- **Windows:** `%APPDATA%\traffic-camera-viewer\config\traffic-camera-viewer.toml`
-- **Linux:** `~/.config/traffic-camera-viewer/traffic-camera-viewer.toml`
-- **macOS:** `~/Library/Application Support/traffic-camera-viewer/traffic-camera-viewer.toml`
+Config is persisted as JSON:
+- **Tauri (desktop):** `%APPDATA%\au.com.pfeerick.traffic-camera-viewer\config.json` (Windows)
+- **Web (Bun server):** `~/.config/traffic-camera-viewer/config.json`
+
+## Build & Run
+
+```bash
+# Frontend development (Vite dev server)
+bun run dev
+
+# Build frontend for production
+bun run build
+
+# Tauri desktop development (launches Vite + Tauri window)
+bun run tauri:dev
+
+# Tauri desktop release build
+bun run tauri:build
+
+# Rust unit tests (run from src-tauri/)
+cd src-tauri && cargo test
+
+# Rust lint
+cd src-tauri && cargo clippy -- -D warnings
+cd src-tauri && cargo fmt --check
+
+# Web server (after bun run build)
+bun run server
+# or: bun server/index.ts
+```
 
 ## Commit Convention
 
@@ -56,7 +115,7 @@ pre-commit install --hook-type commit-msg
 ```
 
 Hooks that run on every commit:
-- `cargo fmt` — auto-formats Rust source in place
+- `cargo fmt` — auto-formats Rust source (runs in `src-tauri/`)
 - `conventional-pre-commit` — rejects non-conventional commit messages
 
 ### Semantic versioning
@@ -66,50 +125,40 @@ cz bump        # scan commits → determine next semver → update Cargo.toml �
 cz changelog   # regenerate CHANGELOG.md without bumping
 ```
 
-Config in `.cz.toml`; version is sourced directly from `Cargo.toml`.
+Config in `.cz.toml`; version is sourced from `src-tauri/Cargo.toml`.
+
+**Note:** Update version in both `src-tauri/Cargo.toml` and `src-tauri/tauri.conf.json`.
 
 **Windows:** Git for Windows sets `core.autocrlf=true` globally, which conflicts with this
-repo's `eol=lf` policy and causes spurious CRLF warnings from `cz bump`. Fix once per clone:
+repo's `eol=lf` policy. Fix once per clone:
 ```bash
-git config --local core.autocrlf input  # normalise to LF on commit
-git config --local core.safecrlf false  # silence conversion warnings
+git config --local core.autocrlf input
+git config --local core.safecrlf false
 ```
 
 ## Lint Policy
 
-CI enforces `cargo clippy -- -D warnings`. The project also targets zero warnings under
-`-W clippy::pedantic -W clippy::nursery` (what rust-analyzer surfaces in VS Code) — this is
-a local development guideline, not a CI gate.
+CI enforces `cargo clippy -- -D warnings` (from `src-tauri/`). The project also targets zero
+warnings under `-W clippy::pedantic -W clippy::nursery`.
 
-Prefer fixing the code over silencing lints. When a suppression is truly unavoidable, use a
-narrow inline `#[allow(...)]` on the exact line with an explanatory comment. There is no
-`[lints.clippy]` block in `Cargo.toml`.
-
-When adding new UI code with egui sliders, pass the config field directly to `Slider::new` using
-its native type (e.g. `u32`, `usize`, `u8`, `f32`) — no `as f64` round-trips needed.
+Prefer fixing the code over silencing lints. Use narrow inline `#[allow(...)]` with a comment.
+There is no `[lints.clippy]` block in `Cargo.toml`.
 
 ## CI / GitHub Actions
 
 | Workflow | Trigger | Jobs |
 |----------|---------|------|
-| `ci.yml` | every push + PR (all branches) | lint, test, build (all 3 platforms); artifacts uploaded on `main` only |
-| `release.yml` | `workflow_run` on `ci.yml` completing for `main` | downloads artifacts; detects version tag on head commit; publishes rolling `latest` or versioned release |
-
-`git push --follow-tags` fires only one `ci.yml` run (the `main` branch push; tag pushes no
-longer trigger CI). Once CI completes, `release.yml` checks whether the commit carries a `v*`
-tag to decide which release type to publish.
+| `ci.yml` | every push + PR (all branches) | lint-frontend, lint-rust, test-rust, build-tauri (3 platforms); artifacts on `main` only |
+| `release.yml` | `workflow_run` on `ci.yml` completing for `main` | downloads artifacts; detects version tag; publishes rolling `latest` or versioned release |
 
 Push to `main` (no tag) → rolling `latest` pre-release updated.
-Push a `v*` tag (via `cz bump`) → versioned release created with auto-generated notes and a
-downloads table; asset names include the version (e.g. `traffic-camera-viewer-v0.5.2-windows.exe`).
+Push a `v*` tag (via `cz bump`) → versioned release created.
 
 Release platforms: Windows x86_64, Linux x86_64, macOS arm64.
-macOS Intel (`macos-15-intel`) is commented out in the matrix — uncomment to re-enable.
 
 ## Windows Setup (Claude Code shell)
 
-`cargo` must be on PATH for Claude Code's bash shell. This is configured globally in
-`~/.claude/settings.json` (not committed to this repo):
+`cargo` must be on PATH for Claude Code. Configured globally in `~/.claude/settings.json`:
 
 ```json
 {
@@ -119,5 +168,4 @@ macOS Intel (`macos-15-intel`) is commented out in the matrix — uncomment to r
 }
 ```
 
-Already configured on the primary developer's machine.
-On Linux/macOS, `rustup` adds `~/.cargo/bin` automatically.
+The Rust crate is in `src-tauri/` — always run `cargo` commands from that directory.
