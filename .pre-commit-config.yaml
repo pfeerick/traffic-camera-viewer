@@ -1,9 +1,14 @@
 repos:
   # Auto-format Rust source with rustfmt (modifies files in place)
-  - repo: https://github.com/doublify/pre-commit-rust
-    rev: v1.0
+  # Local hook needed because Cargo.toml lives in src-tauri/, not the repo root
+  - repo: local
     hooks:
-      - id: fmt
+      - id: cargo-fmt
+        name: cargo fmt
+        entry: cargo fmt --manifest-path src-tauri/Cargo.toml
+        language: system
+        types: [rust]
+        pass_filenames: false
 
   # Enforce conventional commit messages (feat:, fix:, chore:, etc.)
   - repo: https://github.com/compilerla/conventional-pre-commit
