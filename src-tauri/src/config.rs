@@ -99,24 +99,19 @@ pub fn save_config(cfg: &AppConfig, path: &Path) -> Result<(), AppError> {
     Ok(())
 }
 
-/// Attempt to read and parse the legacy confy TOML config from %APPDATA%.
-/// Returns `None` if not found or parse fails.
+/// Attempt to detect and skip migrating the legacy confy TOML config.
+/// Migration requires the `toml` crate which is not a dependency; always returns `None`.
 fn try_migrate_legacy_config() -> Option<AppConfig> {
     #[cfg(target_os = "windows")]
-    let base = std::env::var("APPDATA").ok().map(PathBuf::from)?;
-    #[cfg(not(target_os = "windows"))]
-    let base = dirs_sys_maybe_home().map(|h| h.join(".config"))?;
-
-    let legacy_path = base
-        .join("traffic-camera-viewer")
-        .join("config")
-        .join("traffic-camera-viewer.toml");
-
-    let data = std::fs::read_to_string(legacy_path).ok()?;
-    // We no longer depend on the toml crate; try JSON fallback first, then skip.
-    // If the file exists it's TOML, which serde_json cannot parse — return None
-    // to fall back to defaults. A proper TOML migration would require the toml crate.
-    let _ = data; // suppress unused warning
+    {
+        let base = std::env::var("APPDATA").ok().map(PathBuf::from)?;
+        let legacy_path = base
+            .join("traffic-camera-viewer")
+            .join("config")
+            .join("traffic-camera-viewer.toml");
+        // Confirm the file exists; can't parse TOML without the toml crate.
+        std::fs::read_to_string(&legacy_path).ok()?;
+    }
     None
 }
 
