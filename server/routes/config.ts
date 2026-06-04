@@ -1,4 +1,4 @@
-import { loadConfig, saveConfig } from "../services/config";
+import { type AppConfig, loadConfig, saveConfig } from "../services/config";
 
 export async function handleConfig(req: Request): Promise<Response> {
   if (req.method === "GET") {
@@ -12,7 +12,7 @@ export async function handleConfig(req: Request): Promise<Response> {
 
   if (req.method === "POST") {
     try {
-      const cfg = await req.json();
+      const cfg = await req.json() as AppConfig;
       await saveConfig(cfg);
       return Response.json({ ok: true });
     } catch (err) {
