@@ -1,7 +1,7 @@
 [tool.commitizen]
 name = "cz_conventional_commits"
 version_scheme = "semver"
-version = "0.7.2"
+version = "0.7.3"
 version_files = [
     "src-tauri/Cargo.toml",
     "src-tauri/tauri.conf.json",

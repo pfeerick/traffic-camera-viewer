@@ -1,5 +1,13 @@
 # Changelog
 
+## v0.7.3 (2026-07-31)
+
+### Fix
+
+- **ci**: don't let main pushes cancel each other's CI runs
+- **ci**: queue overlapping release runs instead of cancelling them
+- **release**: normalize CRLF before cz's internal bump commit
+
 ## v0.7.2 (2026-07-31)
 
 ### Fix

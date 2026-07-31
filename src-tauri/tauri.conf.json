@@ -1,7 +1,7 @@
 {
   "$schema": "https://schema.tauri.app/config/2",
   "productName": "Traffic Camera Viewer",
-  "version": "0.7.2",
+  "version": "0.7.3",
   "identifier": "au.com.pfeerick.traffic-camera-viewer",
   "build": {
     "frontendDist": "../dist",
