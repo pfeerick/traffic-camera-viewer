@@ -237,5 +237,10 @@ instead of mise, for better caching and cross-platform target handling.
 - Building on Windows needs VS Build Tools with the C++ workload plus the Windows SDK. Without
   them, `link.exe` resolves to GNU coreutils' `link` instead of the MSVC linker, and every build
   script fails with `link: extra operand`.
+- **Build output lives in `target/` at the repo root, not `src-tauri/target/`** — the root
+  `Cargo.toml` is a workspace, so Cargo puts the target dir alongside it. `src-tauri/target/`
+  never exists. CI's artifact upload and `Swatinem/rust-cache` both pointed there and silently
+  produced empty artifacts and cache misses; `if-no-files-found: error` now makes that loud.
+  `cargo` commands still run from `src-tauri/` — Cargo walks up to find the workspace.
 
 The Rust crate is in `src-tauri/` — always run `cargo` commands from that directory.

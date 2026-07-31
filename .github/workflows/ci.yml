@@ -93,7 +93,7 @@ jobs:
           components: rustfmt, clippy
       - uses: Swatinem/rust-cache@v2
         with:
-          workspaces: src-tauri
+          workspaces: ". -> target"
       - name: Install Linux WebKit deps
         run: |
           sudo apt-get update
@@ -114,7 +114,7 @@ jobs:
       - uses: dtolnay/rust-toolchain@stable
       - uses: Swatinem/rust-cache@v2
         with:
-          workspaces: src-tauri
+          workspaces: ". -> target"
       - name: Install Linux WebKit deps
         run: |
           sudo apt-get update
@@ -157,7 +157,7 @@ jobs:
       - uses: dtolnay/rust-toolchain@stable
       - uses: Swatinem/rust-cache@v2
         with:
-          workspaces: src-tauri
+          workspaces: ". -> target"
           key: ${{ matrix.os }}
       - name: Install Linux WebKit deps
         if: matrix.os == 'ubuntu-latest'
@@ -178,4 +178,8 @@ jobs:
         uses: actions/upload-artifact@v7
         with:
           name: ${{ matrix.artifact-name }}
-          path: src-tauri/target/release/bundle/
+          # Repo root, not src-tauri/: the root Cargo.toml is a workspace, so Cargo
+          # puts the target dir alongside it. src-tauri/target/ never exists, and
+          # uploading from there silently produces an empty artifact.
+          path: target/release/bundle/
+          if-no-files-found: error
