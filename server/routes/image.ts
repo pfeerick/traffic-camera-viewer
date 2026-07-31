@@ -1,5 +1,5 @@
-import { fetchCameraImage } from "../services/fetcher";
 import { saveRolling } from "../services/disk";
+import { fetchCameraImage } from "../services/fetcher";
 
 export async function handleImage(url: URL): Promise<Response> {
   const imageUrl = url.searchParams.get("image_url");
@@ -20,12 +20,12 @@ export async function handleImage(url: URL): Promise<Response> {
       return Response.json({ type: "unchanged", hash: result.hash });
     }
 
-    const bytes = result.bytes!;
+    const bytes = result.bytes;
 
     if (saveToDisk && savePath) {
       // Fire and forget
       saveRolling(bytes, imageUrl, savePath, maxSnapshots).catch((e) =>
-        console.warn("Disk save failed:", e)
+        console.warn("Disk save failed:", e),
       );
     }
 

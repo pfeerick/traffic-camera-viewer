@@ -1,7 +1,6 @@
 import type { CameraInfo } from "./types";
 
-const GEOJSON_URL =
-  "https://data.qldtraffic.qld.gov.au/webcameras.geojson";
+const GEOJSON_URL = "https://data.qldtraffic.qld.gov.au/webcameras.geojson";
 
 interface GeoJsonRoot {
   features: Array<{
@@ -28,7 +27,7 @@ export async function getCameraList(force = false): Promise<CameraInfo[]> {
 
   const res = await fetch(GEOJSON_URL);
   if (!res.ok) throw new Error(`GeoJSON fetch failed: ${res.status}`);
-  const root: GeoJsonRoot = await res.json() as GeoJsonRoot;
+  const root: GeoJsonRoot = (await res.json()) as GeoJsonRoot;
 
   cachedCameras = root.features.map((f) => ({
     id: f.properties.id,
@@ -41,16 +40,13 @@ export async function getCameraList(force = false): Promise<CameraInfo[]> {
   return cachedCameras;
 }
 
-export interface ImageFetchResult {
-  type: "changed" | "unchanged";
-  hash: number;
-  jpeg_b64?: string;
-  bytes?: Uint8Array;
-}
+export type ImageFetchResult =
+  | { type: "unchanged"; hash: number }
+  | { type: "changed"; hash: number; bytes: Uint8Array };
 
 export async function fetchCameraImage(
   imageUrl: string,
-  previousHash: number | null
+  previousHash: number | null,
 ): Promise<ImageFetchResult> {
   const ts = Date.now();
   const url = `${imageUrl}?${ts}`;

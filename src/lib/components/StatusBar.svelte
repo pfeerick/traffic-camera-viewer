@@ -1,12 +1,7 @@
 <script lang="ts">
   import { visibleCameras } from "$lib/stores/cameras";
-  import { allDistricts } from "$lib/stores/cameras";
   import { appConfig } from "$lib/stores/config";
-  import {
-    lastRefresh,
-    refreshCountdown,
-    isLoadingCameras,
-  } from "$lib/stores/refresh";
+  import { lastRefresh, refreshCountdown, isLoadingCameras } from "$lib/stores/refresh";
 
   interface Props {
     settingsOpen: boolean;
@@ -27,17 +22,11 @@
     return ((cfg.refresh_interval_secs - $refreshCountdown) / cfg.refresh_interval_secs) * 100;
   }
 
-  let selectedDistrictCount = $derived(
-    $appConfig ? $appConfig.selected_districts.length : 0
-  );
+  let selectedDistrictCount = $derived($appConfig ? $appConfig.selected_districts.length : 0);
 </script>
 
 <div class="status-bar">
-  <button
-    class="btn"
-    onclick={onrefresh}
-    disabled={$visibleCameras.length === 0}
-  >
+  <button class="btn" onclick={onrefresh} disabled={$visibleCameras.length === 0}>
     Refresh Now
   </button>
 
@@ -62,11 +51,7 @@
     {/if}
   </span>
 
-  <button
-    class="btn settings-btn"
-    class:active={settingsOpen}
-    onclick={onsettingstoggle}
-  >
+  <button class="btn settings-btn" class:active={settingsOpen} onclick={onsettingstoggle}>
     ⚙ Settings
   </button>
 </div>
@@ -160,7 +145,11 @@
   }
 
   @keyframes slide {
-    0% { left: -40%; }
-    100% { left: 100%; }
+    0% {
+      left: -40%;
+    }
+    100% {
+      left: 100%;
+    }
   }
 </style>

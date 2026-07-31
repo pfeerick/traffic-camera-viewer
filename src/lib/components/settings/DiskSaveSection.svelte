@@ -1,8 +1,9 @@
 <script lang="ts">
   import { pendingConfig } from "$lib/stores/config";
   import { api, isTauri } from "$lib/api";
+  import type { CacheInfo } from "$lib/api";
 
-  let cacheInfo = $state<{ file_count: number; total_bytes: number } | null>(null);
+  let cacheInfo = $state<CacheInfo | null>(null);
   let clearing = $state(false);
 
   async function loadCacheInfo() {
@@ -47,21 +48,23 @@
   }
 </script>
 
-<details class="section" onopen={loadCacheInfo}>
+<details
+  class="section"
+  ontoggle={(e) => {
+    if (e.currentTarget.open) loadCacheInfo();
+  }}
+>
   <summary class="section-title">Disk Save</summary>
   {#if $pendingConfig}
     {@const cfg = $pendingConfig}
     <div class="section-body">
-
       <div class="row">
         <span class="lbl">Enable</span>
         <input
           type="checkbox"
           checked={cfg.save_to_disk}
           onchange={(e) =>
-            pendingConfig.update((c) =>
-              c ? { ...c, save_to_disk: e.currentTarget.checked } : c
-            )}
+            pendingConfig.update((c) => (c ? { ...c, save_to_disk: e.currentTarget.checked } : c))}
         />
       </div>
 
@@ -72,9 +75,7 @@
             class="path-input"
             value={cfg.save_path}
             oninput={(e) =>
-              pendingConfig.update((c) =>
-                c ? { ...c, save_path: e.currentTarget.value } : c
-              )}
+              pendingConfig.update((c) => (c ? { ...c, save_path: e.currentTarget.value } : c))}
             placeholder="Save directory…"
           />
           {#if isTauri}
@@ -86,11 +87,14 @@
           <span class="lbl">Max snapshots</span>
           <div class="input-group">
             <input
-              type="range" min="1" max="20" step="1"
+              type="range"
+              min="1"
+              max="20"
+              step="1"
               value={cfg.max_snapshots}
               oninput={(e) =>
                 pendingConfig.update((c) =>
-                  c ? { ...c, max_snapshots: +e.currentTarget.value } : c
+                  c ? { ...c, max_snapshots: +e.currentTarget.value } : c,
                 )}
             />
             <span class="val">{cfg.max_snapshots}</span>
@@ -101,22 +105,19 @@
           <p class="cache-info">
             {cacheInfo.file_count} files · {formatBytes(cacheInfo.total_bytes)}
           </p>
-          <button
-            class="btn danger"
-            onclick={clearCache}
-            disabled={clearing}
-          >
+          <button class="btn danger" onclick={clearCache} disabled={clearing}>
             {clearing ? "Clearing…" : "Clear Cache"}
           </button>
         {/if}
       {/if}
-
     </div>
   {/if}
 </details>
 
 <style>
-  .section { border-bottom: 1px solid #333; }
+  .section {
+    border-bottom: 1px solid #333;
+  }
 
   .section-title {
     padding: 8px 14px;
@@ -130,7 +131,9 @@
     list-style: none;
   }
 
-  .section-title::-webkit-details-marker { display: none; }
+  .section-title::-webkit-details-marker {
+    display: none;
+  }
 
   .section-body {
     padding: 4px 14px 10px;
@@ -194,15 +197,22 @@
     cursor: pointer;
   }
 
-  .btn:hover:not(:disabled) { background: #3a3a3a; }
-  .btn:disabled { opacity: 0.5; cursor: not-allowed; }
+  .btn:hover:not(:disabled) {
+    background: #3a3a3a;
+  }
+  .btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
 
   .btn.danger {
     border-color: #804040;
     color: #ff8080;
   }
 
-  .btn.danger:hover:not(:disabled) { background: #3a1a1a; }
+  .btn.danger:hover:not(:disabled) {
+    background: #3a1a1a;
+  }
 
   .cache-info {
     font-size: 11px;
