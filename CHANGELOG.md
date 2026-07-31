@@ -1,5 +1,11 @@
 # Changelog
 
+## v0.7.1 (2026-07-31)
+
+### Fix
+
+- **release**: sync Cargo.lock version and keep it updated on bump
+
 ## v0.7.0 (2026-07-31)
 
 ### Feat
