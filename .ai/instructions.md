@@ -199,13 +199,18 @@ covered separately by `bun run typecheck` (`svelte-check` for `src/`, including 
 
 | Workflow | Trigger | Jobs |
 |----------|---------|------|
-| `ci.yml` | every push + PR (all branches), ignoring changes that only touch `**.md`/`LICENSE`/`release.yml` | `hooks` (pre-commit hygiene suite), `commit-messages` (PR-only, Conventional Commits check via `cz check`), `lint` (Biome + Prettier), `typecheck` (svelte-check + server tsc), `lint-rust` (fmt + clippy), `test-rust`, `build` (3 platforms, gated on all of the above); artifacts uploaded on `main` only |
+| `ci.yml` | every push + PR (all branches), ignoring changes that only touch `**.md`/`LICENSE`/`release.yml` | `hooks` (pre-commit hygiene suite), `commit-messages` (PR-only, Conventional Commits check via `cz check`), `lint` (Biome + Prettier), `typecheck` (svelte-check + server tsc), `lint-rust` (fmt + clippy), `test-rust`, `build` (3 platforms); artifacts uploaded on `main` only |
 | `release.yml` | `workflow_run` on `ci.yml` completing for `main` | downloads artifacts; detects version tag; publishes rolling `latest` or versioned release, with notes extracted from `CHANGELOG.md` |
 
 Push to `main` (no tag) → rolling `latest` pre-release updated.
 Push a `v*` tag (via `cz bump`) → versioned release created.
 
 Release platforms: Windows x86_64, Linux x86_64, macOS arm64.
+
+`build` needs `lint`, `typecheck`, `hooks`, `lint-rust` and `test-rust` — but deliberately **not**
+`commit-messages`. That job is PR-only, so on a push it is skipped, and in GitHub Actions a skipped
+dependency skips every job that needs it. Listing it would silently stop `build` on every push to
+`main`, and with it the whole release pipeline. It gates a PR by failing its own check.
 
 Every `jdx/mise-action` step in CI passes `install_args` (e.g. `bun`, `pipx:pre-commit`,
 `pipx:commitizen`) — `.mise.toml` also lists `rust`, and a bare `jdx/mise-action@v4` call would
