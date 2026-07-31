@@ -62,3 +62,4 @@ See [LICENSE](LICENSE) for the full text.
 
 Application icon — [CCTV](https://pictogrammers.com/library/mdi/icon/cctv/) by
 [Material Design Icons](https://pictogrammers.com/library/mdi/), Apache 2.0.
+See [src-tauri/icons/ATTRIBUTION.md](src-tauri/icons/ATTRIBUTION.md) for full details.
