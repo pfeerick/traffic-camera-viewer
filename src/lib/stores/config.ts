@@ -1,6 +1,6 @@
-import { writable, get } from "svelte/store";
-import { api } from "$lib/api";
+import { get, writable } from "svelte/store";
 import type { AppConfig } from "$lib/api";
+import { api } from "$lib/api";
 
 export const appConfig = writable<AppConfig | null>(null);
 export const pendingConfig = writable<AppConfig | null>(null);

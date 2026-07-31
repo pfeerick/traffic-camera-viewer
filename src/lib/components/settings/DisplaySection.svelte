@@ -44,17 +44,19 @@
   {#if $pendingConfig}
     {@const cfg = $pendingConfig}
     <div class="section-body">
-
       <!-- Refresh interval -->
       <div class="row">
         <span class="lbl">Refresh interval</span>
         <div class="input-group">
           <input
-            type="range" min="10" max="300" step="10"
+            type="range"
+            min="10"
+            max="300"
+            step="10"
             value={cfg.refresh_interval_secs}
             oninput={(e) =>
               pendingConfig.update((c) =>
-                c ? { ...c, refresh_interval_secs: +e.currentTarget.value } : c
+                c ? { ...c, refresh_interval_secs: +e.currentTarget.value } : c,
               )}
           />
           <span class="val">{cfg.refresh_interval_secs}s</span>
@@ -66,12 +68,13 @@
         <span class="lbl">Columns</span>
         <div class="input-group">
           <input
-            type="range" min="1" max="6" step="1"
+            type="range"
+            min="1"
+            max="6"
+            step="1"
             value={cfg.column_count}
             oninput={(e) =>
-              pendingConfig.update((c) =>
-                c ? { ...c, column_count: +e.currentTarget.value } : c
-              )}
+              pendingConfig.update((c) => (c ? { ...c, column_count: +e.currentTarget.value } : c))}
           />
           <span class="val">{cfg.column_count}</span>
         </div>
@@ -82,12 +85,13 @@
         <span class="lbl">Grid spacing</span>
         <div class="input-group">
           <input
-            type="range" min="0" max="16" step="1"
+            type="range"
+            min="0"
+            max="16"
+            step="1"
             value={cfg.grid_spacing}
             oninput={(e) =>
-              pendingConfig.update((c) =>
-                c ? { ...c, grid_spacing: +e.currentTarget.value } : c
-              )}
+              pendingConfig.update((c) => (c ? { ...c, grid_spacing: +e.currentTarget.value } : c))}
           />
           <span class="val">{cfg.grid_spacing}px</span>
         </div>
@@ -100,12 +104,11 @@
           {#each ASPECT_RATIOS as ratio}
             <button
               class="ratio-btn"
-              class:active={ratioMatches(cfg.camera_aspect_ratio as [number,number], ratio)}
+              class:active={ratioMatches(cfg.camera_aspect_ratio as [number, number], ratio)}
               onclick={() =>
-                pendingConfig.update((c) =>
-                  c ? { ...c, camera_aspect_ratio: ratio } : c
-                )}
-            >{ratioLabel(ratio)}</button>
+                pendingConfig.update((c) => (c ? { ...c, camera_aspect_ratio: ratio } : c))}
+              >{ratioLabel(ratio)}</button
+            >
           {/each}
         </div>
       </div>
@@ -118,7 +121,7 @@
           checked={cfg.show_camera_titles}
           onchange={(e) =>
             pendingConfig.update((c) =>
-              c ? { ...c, show_camera_titles: e.currentTarget.checked } : c
+              c ? { ...c, show_camera_titles: e.currentTarget.checked } : c,
             )}
         />
       </div>
@@ -129,11 +132,14 @@
           <span class="lbl">Title size</span>
           <div class="input-group">
             <input
-              type="range" min="8" max="24" step="1"
+              type="range"
+              min="8"
+              max="24"
+              step="1"
               value={cfg.camera_title_font_size}
               oninput={(e) =>
                 pendingConfig.update((c) =>
-                  c ? { ...c, camera_title_font_size: +e.currentTarget.value } : c
+                  c ? { ...c, camera_title_font_size: +e.currentTarget.value } : c,
                 )}
             />
             <span class="val">{cfg.camera_title_font_size}pt</span>
@@ -144,12 +150,12 @@
         <div class="row">
           <span class="lbl">Title align</span>
           <div class="ratio-btns">
-            {#each (["left", "center", "right"] as TitleAlign[]) as align}
+            {#each ["left", "center", "right"] as TitleAlign[] as align}
               <button
                 class="ratio-btn"
                 class:active={cfg.camera_title_align === align}
-                onclick={() => setAlign(align)}
-              >{align[0].toUpperCase()}</button>
+                onclick={() => setAlign(align)}>{align[0].toUpperCase()}</button
+              >
             {/each}
           </div>
         </div>
@@ -158,14 +164,36 @@
         <div class="row">
           <span class="lbl">Title color</span>
           <div class="color-group">
-            <div class="swatch" style="background: rgb({cfg.camera_title_rgb[0]},{cfg.camera_title_rgb[1]},{cfg.camera_title_rgb[2]})"></div>
+            <div
+              class="swatch"
+              style="background: rgb({cfg.camera_title_rgb[0]},{cfg.camera_title_rgb[1]},{cfg
+                .camera_title_rgb[2]})"
+            ></div>
             <div class="rgb-sliders">
-              <input type="range" min="0" max="255" value={cfg.camera_title_rgb[0]}
-                oninput={(e) => setTitleRgbChannel(0, +e.currentTarget.value)} title="Red" />
-              <input type="range" min="0" max="255" value={cfg.camera_title_rgb[1]}
-                oninput={(e) => setTitleRgbChannel(1, +e.currentTarget.value)} title="Green" />
-              <input type="range" min="0" max="255" value={cfg.camera_title_rgb[2]}
-                oninput={(e) => setTitleRgbChannel(2, +e.currentTarget.value)} title="Blue" />
+              <input
+                type="range"
+                min="0"
+                max="255"
+                value={cfg.camera_title_rgb[0]}
+                oninput={(e) => setTitleRgbChannel(0, +e.currentTarget.value)}
+                title="Red"
+              />
+              <input
+                type="range"
+                min="0"
+                max="255"
+                value={cfg.camera_title_rgb[1]}
+                oninput={(e) => setTitleRgbChannel(1, +e.currentTarget.value)}
+                title="Green"
+              />
+              <input
+                type="range"
+                min="0"
+                max="255"
+                value={cfg.camera_title_rgb[2]}
+                oninput={(e) => setTitleRgbChannel(2, +e.currentTarget.value)}
+                title="Blue"
+              />
             </div>
           </div>
         </div>
@@ -175,24 +203,47 @@
       <div class="row">
         <span class="lbl">Background</span>
         <div class="color-group">
-          <div class="swatch" style="background: rgb({cfg.app_background_rgb[0]},{cfg.app_background_rgb[1]},{cfg.app_background_rgb[2]})"></div>
+          <div
+            class="swatch"
+            style="background: rgb({cfg.app_background_rgb[0]},{cfg.app_background_rgb[1]},{cfg
+              .app_background_rgb[2]})"
+          ></div>
           <div class="rgb-sliders">
-            <input type="range" min="0" max="255" value={cfg.app_background_rgb[0]}
-              oninput={(e) => setBgRgbChannel(0, +e.currentTarget.value)} title="Red" />
-            <input type="range" min="0" max="255" value={cfg.app_background_rgb[1]}
-              oninput={(e) => setBgRgbChannel(1, +e.currentTarget.value)} title="Green" />
-            <input type="range" min="0" max="255" value={cfg.app_background_rgb[2]}
-              oninput={(e) => setBgRgbChannel(2, +e.currentTarget.value)} title="Blue" />
+            <input
+              type="range"
+              min="0"
+              max="255"
+              value={cfg.app_background_rgb[0]}
+              oninput={(e) => setBgRgbChannel(0, +e.currentTarget.value)}
+              title="Red"
+            />
+            <input
+              type="range"
+              min="0"
+              max="255"
+              value={cfg.app_background_rgb[1]}
+              oninput={(e) => setBgRgbChannel(1, +e.currentTarget.value)}
+              title="Green"
+            />
+            <input
+              type="range"
+              min="0"
+              max="255"
+              value={cfg.app_background_rgb[2]}
+              oninput={(e) => setBgRgbChannel(2, +e.currentTarget.value)}
+              title="Blue"
+            />
           </div>
         </div>
       </div>
-
     </div>
   {/if}
 </details>
 
 <style>
-  .section { border-bottom: 1px solid #333; }
+  .section {
+    border-bottom: 1px solid #333;
+  }
 
   .section-title {
     padding: 8px 14px;
@@ -206,7 +257,9 @@
     list-style: none;
   }
 
-  .section-title::-webkit-details-marker { display: none; }
+  .section-title::-webkit-details-marker {
+    display: none;
+  }
 
   .section-body {
     padding: 4px 14px 10px;

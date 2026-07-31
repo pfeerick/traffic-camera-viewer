@@ -54,7 +54,9 @@
     list-style: none;
   }
 
-  .section-title::-webkit-details-marker { display: none; }
+  .section-title::-webkit-details-marker {
+    display: none;
+  }
 
   .section-body {
     padding: 4px 14px 10px;

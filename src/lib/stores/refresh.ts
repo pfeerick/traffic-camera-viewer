@@ -1,7 +1,7 @@
-import { writable, get } from "svelte/store";
-import { api } from "$lib/api";
+import { get, writable } from "svelte/store";
 import type { AppConfig } from "$lib/api";
-import { visibleCameras, cameraImages } from "./cameras";
+import { api } from "$lib/api";
+import { cameraImages, visibleCameras } from "./cameras";
 import { appConfig } from "./config";
 
 export const lastRefresh = writable<Date | null>(null);
@@ -26,10 +26,7 @@ export function stopRefreshTimer(): void {
 function tickTimer(): void {
   const next = get(nextRefresh);
   if (!next) return;
-  const remaining = Math.max(
-    0,
-    Math.floor((next.getTime() - Date.now()) / 1000)
-  );
+  const remaining = Math.max(0, Math.floor((next.getTime() - Date.now()) / 1000));
   refreshCountdown.set(remaining);
   if (remaining <= 0) {
     void triggerRefreshAll();
@@ -43,11 +40,7 @@ export async function triggerRefreshAll(): Promise<void> {
 
   scheduleNextRefresh(cfg);
 
-  await Promise.allSettled(
-    cameras.map((cam) =>
-      fetchSingleCamera(cam.id, cam.image_url, cfg)
-    )
-  );
+  await Promise.allSettled(cameras.map((cam) => fetchSingleCamera(cam.id, cam.image_url, cfg)));
 }
 
 export async function triggerRefreshSingle(cameraId: number): Promise<void> {
@@ -58,11 +51,7 @@ export async function triggerRefreshSingle(cameraId: number): Promise<void> {
   await fetchSingleCamera(cam.id, cam.image_url, cfg);
 }
 
-async function fetchSingleCamera(
-  id: number,
-  imageUrl: string,
-  cfg: AppConfig
-): Promise<void> {
+async function fetchSingleCamera(id: number, imageUrl: string, cfg: AppConfig): Promise<void> {
   const current = get(cameraImages)[id];
 
   cameraImages.update((m) => ({

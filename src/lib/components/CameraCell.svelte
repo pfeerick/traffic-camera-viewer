@@ -81,12 +81,7 @@
 </div>
 
 {#if contextMenuVisible}
-  <div
-    class="context-menu"
-    style="left: {menuX}px; top: {menuY}px"
-    role="menu"
-    tabindex="-1"
-  >
+  <div class="context-menu" style="left: {menuX}px; top: {menuY}px" role="menu" tabindex="-1">
     <button onclick={handleRefresh} role="menuitem">Refresh</button>
     <button onclick={handleHide} role="menuitem">Hide camera</button>
   </div>
@@ -180,7 +175,7 @@
   .spinner {
     width: 16px;
     height: 16px;
-    border: 2px solid rgba(255,255,255,0.3);
+    border: 2px solid rgba(255, 255, 255, 0.3);
     border-top-color: #fff;
     border-radius: 50%;
     animation: spin 0.8s linear infinite;
@@ -193,7 +188,7 @@
     border: 1px solid #444;
     border-radius: 4px;
     overflow: hidden;
-    box-shadow: 0 4px 12px rgba(0,0,0,0.5);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
     min-width: 140px;
   }
 
@@ -214,11 +209,18 @@
   }
 
   @keyframes spin {
-    to { transform: rotate(360deg); }
+    to {
+      transform: rotate(360deg);
+    }
   }
 
   @keyframes pulse {
-    0%, 100% { opacity: 0.5; }
-    50% { opacity: 0.8; }
+    0%,
+    100% {
+      opacity: 0.5;
+    }
+    50% {
+      opacity: 0.8;
+    }
   }
 </style>

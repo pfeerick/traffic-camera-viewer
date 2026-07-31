@@ -20,7 +20,7 @@
   let bgStyle = $derived(
     $appConfig
       ? `background: rgb(${$appConfig.app_background_rgb[0]},${$appConfig.app_background_rgb[1]},${$appConfig.app_background_rgb[2]})`
-      : "background: rgb(24,24,24)"
+      : "background: rgb(24,24,24)",
   );
 
   onMount(async () => {

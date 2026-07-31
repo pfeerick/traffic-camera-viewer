@@ -26,8 +26,7 @@ export const webApi: ApiClient = {
 
   getCameraList: () => fetch(`${BASE}/cameras`).then(json<CameraInfo[]>),
 
-  refreshCameraList: () =>
-    fetch(`${BASE}/cameras?refresh=1`).then(json<CameraInfo[]>),
+  refreshCameraList: () => fetch(`${BASE}/cameras?refresh=1`).then(json<CameraInfo[]>),
 
   fetchImage: (params: FetchImageParams) => {
     const q = new URLSearchParams({
@@ -51,7 +50,5 @@ export const webApi: ApiClient = {
     }).then(json<void>),
 
   getCacheInfo: (path: string) =>
-    fetch(
-      `${BASE}/disk/info?path=${encodeURIComponent(path)}`
-    ).then(json<CacheInfo>),
+    fetch(`${BASE}/disk/info?path=${encodeURIComponent(path)}`).then(json<CacheInfo>),
 };

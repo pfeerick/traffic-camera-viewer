@@ -1,8 +1,8 @@
 import { join } from "node:path";
 import { handleCameras } from "./routes/cameras";
-import { handleImage } from "./routes/image";
 import { handleConfig } from "./routes/config";
-import { handleDiskInfo, handleDiskClear } from "./routes/disk";
+import { handleDiskClear, handleDiskInfo } from "./routes/disk";
+import { handleImage } from "./routes/image";
 
 const PORT = Number(process.env.PORT ?? 3000);
 const DIST_DIR = join(import.meta.dir, "..", "dist");
@@ -29,9 +29,7 @@ function mimeFor(path: string): string {
 async function serveStatic(pathname: string): Promise<Response> {
   // SPA fallback: serve index.html for non-asset paths
   const isAsset = pathname.includes(".");
-  const filePath = isAsset
-    ? join(DIST_DIR, pathname)
-    : join(DIST_DIR, "index.html");
+  const filePath = isAsset ? join(DIST_DIR, pathname) : join(DIST_DIR, "index.html");
 
   const file = Bun.file(filePath);
   if (!(await file.exists())) {

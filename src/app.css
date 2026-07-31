@@ -1,10 +1,13 @@
-*, *::before, *::after {
+*,
+*::before,
+*::after {
   box-sizing: border-box;
   margin: 0;
   padding: 0;
 }
 
-html, body {
+html,
+body {
   height: 100%;
   overflow: hidden;
   font-family: system-ui, -apple-system, sans-serif;
@@ -24,7 +27,8 @@ button {
   font: inherit;
 }
 
-input[type="text"], input[type="number"] {
+input[type="text"],
+input[type="number"] {
   font: inherit;
   background: #2a2a2a;
   color: #e0e0e0;

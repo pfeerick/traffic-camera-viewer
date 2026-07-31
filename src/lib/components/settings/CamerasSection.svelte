@@ -5,13 +5,16 @@
 
   // Build ordered camera list for the settings panel — shows all cameras in selected districts
   // (including hidden ones, so they can be re-enabled). The main grid excludes hidden cameras.
-  function orderedCameras(cameras: CameraInfo[], order: number[], selectedDistricts: string[]): CameraInfo[] {
+  function orderedCameras(
+    cameras: CameraInfo[],
+    order: number[],
+    selectedDistricts: string[],
+  ): CameraInfo[] {
     const districtSet = new Set(selectedDistricts);
     const orderMap = new Map(order.map((id, i) => [id, i] as [number, number]));
     const available = cameras.filter((c) => districtSet.has(c.district));
     return [...available].sort(
-      (a, b) =>
-        (orderMap.get(a.id) ?? Infinity) - (orderMap.get(b.id) ?? Infinity)
+      (a, b) => (orderMap.get(a.id) ?? Infinity) - (orderMap.get(b.id) ?? Infinity),
     );
   }
 
@@ -73,14 +76,14 @@
                 class="icon-btn"
                 onclick={() => moveUp(camera.id)}
                 disabled={idx === 0}
-                title="Move up"
-              >▲</button>
+                title="Move up">▲</button
+              >
               <button
                 class="icon-btn"
                 onclick={() => moveDown(camera.id)}
                 disabled={idx === cameras.length - 1}
-                title="Move down"
-              >▼</button>
+                title="Move down">▼</button
+              >
               <input
                 type="checkbox"
                 checked={!isHidden}
@@ -112,7 +115,9 @@
     list-style: none;
   }
 
-  .section-title::-webkit-details-marker { display: none; }
+  .section-title::-webkit-details-marker {
+    display: none;
+  }
 
   .section-body {
     padding: 4px 14px 10px;

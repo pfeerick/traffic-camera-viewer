@@ -1,4 +1,4 @@
-import { getCacheInfo, clearCache } from "../services/disk";
+import { clearCache, getCacheInfo } from "../services/disk";
 
 export async function handleDiskInfo(url: URL): Promise<Response> {
   const path = url.searchParams.get("path") ?? "";
@@ -13,7 +13,7 @@ export async function handleDiskInfo(url: URL): Promise<Response> {
 
 export async function handleDiskClear(req: Request): Promise<Response> {
   try {
-    const { path } = await req.json() as { path: string };
+    const { path } = (await req.json()) as { path: string };
     if (!path) return Response.json({ error: "missing path" }, { status: 400 });
     await clearCache(path);
     return Response.json({ ok: true });

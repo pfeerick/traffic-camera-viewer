@@ -30,15 +30,14 @@
     style="
       --cols: {cols};
       --gap: {gap}px;
-      --title-color: rgb({cfg.camera_title_rgb[0]},{cfg.camera_title_rgb[1]},{cfg.camera_title_rgb[2]});
+      --title-color: rgb({cfg.camera_title_rgb[0]},{cfg.camera_title_rgb[1]},{cfg
+      .camera_title_rgb[2]});
       --title-size: {cfg.camera_title_font_size}px;
       --title-align: {cfg.camera_title_align};
     "
   >
     {#if cameras.length === 0}
-      <div class="empty-state">
-        No cameras to display. Check your district filter in Settings.
-      </div>
+      <div class="empty-state">No cameras to display. Check your district filter in Settings.</div>
     {:else}
       <div class="grid" style="grid-template-columns: repeat({cols}, 1fr); gap: {gap}px;">
         {#each cameras as camera (camera.id)}

@@ -1,6 +1,6 @@
-import { writable, derived, get } from "svelte/store";
-import { api } from "$lib/api";
+import { derived, get, writable } from "svelte/store";
 import type { CameraInfo } from "$lib/api";
+import { api } from "$lib/api";
 import { appConfig } from "./config";
 
 export interface CameraImageState {
@@ -15,37 +15,27 @@ export const allCameras = writable<CameraInfo[]>([]);
 export const cameraImages = writable<Record<number, CameraImageState>>({});
 
 export const allDistricts = derived(allCameras, ($cams) =>
-  [...new Set($cams.map((c) => c.district))].sort()
+  [...new Set($cams.map((c) => c.district))].sort(),
 );
 
-export const visibleCameras = derived(
-  [allCameras, appConfig],
-  ([$cams, $cfg]) => {
-    if (!$cfg) return [];
-    const selectedSet = new Set($cfg.selected_districts);
-    const hiddenSet = new Set($cfg.hidden_camera_ids);
-    let filtered = $cams.filter(
-      (c) => selectedSet.has(c.district) && !hiddenSet.has(c.id)
+export const visibleCameras = derived([allCameras, appConfig], ([$cams, $cfg]) => {
+  if (!$cfg) return [];
+  const selectedSet = new Set($cfg.selected_districts);
+  const hiddenSet = new Set($cfg.hidden_camera_ids);
+  let filtered = $cams.filter((c) => selectedSet.has(c.district) && !hiddenSet.has(c.id));
+  if ($cfg.camera_order.length > 0) {
+    const orderMap = new Map($cfg.camera_order.map((id, i) => [id, i] as [number, number]));
+    filtered = [...filtered].sort(
+      (a, b) => (orderMap.get(a.id) ?? Infinity) - (orderMap.get(b.id) ?? Infinity),
     );
-    if ($cfg.camera_order.length > 0) {
-      const orderMap = new Map(
-        $cfg.camera_order.map((id, i) => [id, i] as [number, number])
-      );
-      filtered = [...filtered].sort(
-        (a, b) =>
-          (orderMap.get(a.id) ?? Infinity) - (orderMap.get(b.id) ?? Infinity)
-      );
-    }
-    return filtered;
   }
-);
+  return filtered;
+});
 
 export async function loadCameras(): Promise<void> {
   const cameras = await api.getCameraList();
   allCameras.set(cameras);
-  cameraImages.set(
-    Object.fromEntries(cameras.map((c) => [c.id, { status: "idle" as const }]))
-  );
+  cameraImages.set(Object.fromEntries(cameras.map((c) => [c.id, { status: "idle" as const }])));
 }
 
 export async function refreshCameraList(): Promise<void> {

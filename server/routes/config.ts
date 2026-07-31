@@ -12,7 +12,7 @@ export async function handleConfig(req: Request): Promise<Response> {
 
   if (req.method === "POST") {
     try {
-      const cfg = await req.json() as AppConfig;
+      const cfg = (await req.json()) as AppConfig;
       await saveConfig(cfg);
       return Response.json({ ok: true });
     } catch (err) {
