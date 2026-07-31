@@ -1,7 +1,7 @@
 [tool.commitizen]
 name = "cz_conventional_commits"
 version_scheme = "semver"
-version = "0.7.1"
+version = "0.7.2"
 version_files = [
     "src-tauri/Cargo.toml",
     "src-tauri/tauri.conf.json",
@@ -18,6 +18,11 @@ pre_bump_hooks = [
     "git add bun.lock",
     "cargo check --manifest-path src-tauri/Cargo.toml",
     "git add Cargo.lock",
+    # commitizen writes CRLF into the files below on Windows, which the
+    # mixed-line-ending hook then trips on during cz's own internal commit.
+    # Normalize them here, before that commit runs, so it succeeds on the
+    # first try; `& exit 0` swallows the hook's non-zero "I fixed something" exit.
+    "pre-commit run mixed-line-ending --files src-tauri/Cargo.toml src-tauri/tauri.conf.json package.json CHANGELOG.md & exit 0",
 ]
 # Push the bump commit and its tag together, atomically. A tag that only exists
 # locally is indistinguishable from one deleted upstream, so the next fetch
