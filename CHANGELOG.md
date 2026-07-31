@@ -1,5 +1,11 @@
 # Changelog
 
+## v0.7.0 (2026-07-31)
+
+### Feat
+
+- migrate from egui to Tauri v2 + Svelte + Bun (#2)
+
 ## v0.6.0 (2026-04-15)
 
 ### Feat
