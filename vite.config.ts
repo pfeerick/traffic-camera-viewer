@@ -16,6 +16,16 @@ export default defineConfig({
     port: 5173,
     strictPort: true,
     host: host || false,
+    // Web mode talks to the Bun server over fetch('/api/...'). Without this proxy,
+    // Vite answers those with the SPA fallback and the frontend fails to parse
+    // '<!doctype html' as JSON. Harmless under `tauri:dev`, which uses invoke()
+    // and never issues these requests. Needs `bun run server` running alongside.
+    proxy: {
+      "/api": {
+        target: "http://localhost:3000",
+        changeOrigin: true,
+      },
+    },
     hmr: host
       ? {
           protocol: "ws",

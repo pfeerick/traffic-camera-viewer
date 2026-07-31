@@ -14,3 +14,21 @@ run = [
   "bun install",
   "pre-commit install --hook-type pre-commit --hook-type commit-msg",
 ]
+
+# Output lands in target/ at the repo root, not src-tauri/target/ — the root
+# Cargo.toml is a workspace, so Cargo puts the target dir beside it.
+#   installers: target/release/bundle/{nsis,msi}/   (deb/AppImage on Linux, dmg on macOS)
+#   bare exe:   target/release/traffic-camera-viewer
+# Narrow the bundle set with: mise run dist --bundles nsis
+[tasks.dist]
+description = "Build the desktop app and its platform installers"
+run = "bun run tauri:build"
+
+[tasks.check]
+description = "Lint, format-check and type-check the frontend"
+run = ["bun run check", "bun run typecheck"]
+
+[tasks.lint-rust]
+description = "Run the Rust checks CI enforces"
+dir = "src-tauri"
+run = ["cargo fmt --check", "cargo clippy -- -D warnings", "cargo test"]

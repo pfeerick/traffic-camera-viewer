@@ -92,7 +92,18 @@ Config is persisted as JSON:
 # then `bun install` + activates the pre-commit hooks
 mise install && mise run setup
 
-# Frontend development (Vite dev server)
+# mise tasks (shell-agnostic — prefer these over `mise exec`, see the PowerShell trap below)
+mise run dist        # build the desktop app + platform installers
+mise run check       # frontend lint, format-check and type-check
+mise run lint-rust   # cargo fmt --check + clippy -D warnings + cargo test
+mise tasks           # list them all
+
+# Frontend development (Vite dev server, port 5173)
+# For WEB mode this needs the Bun server running alongside in another terminal:
+#   bun run server        # port 3000 — Vite proxies /api to it (see vite.config.ts)
+# Without it, /api/* falls through to Vite's SPA fallback and the app dies with
+# "Unexpected token '<', "<!doctype "... is not valid JSON".
+# Not needed for desktop work — `tauri:dev` uses invoke() and issues no /api calls.
 bun run dev
 
 # Build frontend for production
@@ -237,6 +248,12 @@ instead of mise, for better caching and cross-platform target handling.
 - Building on Windows needs VS Build Tools with the C++ workload plus the Windows SDK. Without
   them, `link.exe` resolves to GNU coreutils' `link` instead of the MSVC linker, and every build
   script fails with `link: extra operand`.
+- **PowerShell eats `--`.** It is PowerShell's own end-of-parameters token, so a bash-shaped
+  `mise exec -- bun run tauri:build` arrives as `exec bun run tauri:build`; mise reads the three
+  words as `TOOL@VERSION` specs and fails with "required arguments were not provided: <COMMAND>".
+  Use `mise exec -c "bun run tauri:build"`, or `mise --% exec -- ...`, or simply call the tool
+  directly — mise's shims are on PATH, so bare `bun`/`cargo`/`cz` work. Prefer `mise run <task>`,
+  which sidesteps the problem entirely and is shell-agnostic.
 - **Build output lives in `target/` at the repo root, not `src-tauri/target/`** — the root
   `Cargo.toml` is a workspace, so Cargo puts the target dir alongside it. `src-tauri/target/`
   never exists. CI's artifact upload and `Swatinem/rust-cache` both pointed there and silently
