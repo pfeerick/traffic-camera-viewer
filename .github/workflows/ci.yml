@@ -3,7 +3,15 @@ name: CI
 on:
   push:
     branches: ['**']
+    paths-ignore:
+      - '**.md'
+      - 'LICENSE'
+      - '.github/workflows/release.yml'
   pull_request:
+    paths-ignore:
+      - '**.md'
+      - 'LICENSE'
+      - '.github/workflows/release.yml'
 
 # Cancel in-progress runs for the same ref (branch or PR).
 concurrency:
@@ -11,24 +19,75 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  lint-frontend:
+  lint:
     name: Lint (Frontend)
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v6
-      - uses: oven-sh/setup-bun@v2
+      - uses: actions/checkout@v7
+      - uses: jdx/mise-action@v4
+        with:
+          install_args: bun
       - name: Install dependencies
-        run: bun install
-      - name: TypeScript check (frontend)
-        run: bun tsc --noEmit
-      - name: TypeScript check (server)
-        run: bun tsc -p server/tsconfig.json --noEmit
+        run: bun install --frozen-lockfile
+      - name: Biome + Prettier
+        run: bun run check
+
+  typecheck:
+    name: Type Check
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: jdx/mise-action@v4
+        with:
+          install_args: bun
+      - name: Install dependencies
+        run: bun install --frozen-lockfile
+      - name: svelte-check + server tsc
+        run: bun run typecheck
+
+  # Runs the shared pre-commit hygiene suite (whitespace/EOL/YAML/JSON/TOML checks,
+  # private-key detection, etc.) so it's enforced even for contributors who never ran
+  # `pre-commit install` locally, and so `git commit --no-verify` can't silently skip it.
+  # Skips:
+  #   - biome: shells out to `bun run check:fix`, which needs a Bun install; the `lint`
+  #     job above already covers Biome + Prettier.
+  #   - cargo-fmt: needs a Rust toolchain; `lint-rust` already runs `cargo fmt --check`.
+  hooks:
+    name: Pre-commit Hooks
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: jdx/mise-action@v4
+        with:
+          install_args: pipx:pre-commit
+      - name: Run pre-commit hooks
+        run: pre-commit run --all-files --show-diff-on-failure
+        env:
+          SKIP: biome,cargo-fmt
+
+  # PR-only: validates every commit message in the PR against Conventional Commits.
+  commit-messages:
+    name: Commit Messages
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    steps:
+      # --rev-range needs full history to walk the base..head range.
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+      - uses: jdx/mise-action@v4
+        with:
+          install_args: pipx:commitizen
+      # Use head.sha rather than HEAD: HEAD here is checkout's synthetic merge commit
+      # of the PR into base, whose "Merge ... into ..." subject is not conventional.
+      - name: Check commit messages
+        run: cz check --rev-range ${{ github.event.pull_request.base.sha }}..${{ github.event.pull_request.head.sha }}
 
   lint-rust:
     name: Lint (Rust)
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
       - uses: dtolnay/rust-toolchain@stable
         with:
           components: rustfmt, clippy
@@ -51,7 +110,7 @@ jobs:
     name: Test (Rust)
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
       - uses: dtolnay/rust-toolchain@stable
       - uses: Swatinem/rust-cache@v2
         with:
@@ -67,7 +126,11 @@ jobs:
 
   build:
     name: Build (${{ matrix.name }})
-    needs: [lint-frontend, lint-rust, test-rust]
+    # commit-messages is deliberately absent: it is PR-only, so on a push it is skipped,
+    # and a skipped dependency skips every job that needs it — which would silently stop
+    # build (and therefore the whole release pipeline) on every push to main. It gates the
+    # PR by failing its own check, which is all it needs to do.
+    needs: [lint, typecheck, hooks, lint-rust, test-rust]
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
@@ -87,8 +150,10 @@ jobs:
           #   os: macos-15-intel
           #   artifact-name: tauri-macos-intel
     steps:
-      - uses: actions/checkout@v6
-      - uses: oven-sh/setup-bun@v2
+      - uses: actions/checkout@v7
+      - uses: jdx/mise-action@v4
+        with:
+          install_args: bun
       - uses: dtolnay/rust-toolchain@stable
       - uses: Swatinem/rust-cache@v2
         with:
@@ -101,7 +166,7 @@ jobs:
           sudo apt-get install -y libwebkit2gtk-4.1-dev libgtk-3-dev \
             libayatana-appindicator3-dev librsvg2-dev
       - name: Install frontend dependencies
-        run: bun install
+        run: bun install --frozen-lockfile
       - name: Tauri build
         uses: tauri-apps/tauri-action@v0
         with:

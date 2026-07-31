@@ -22,7 +22,7 @@ jobs:
       actions: read   # required to download artifacts from the triggering run
 
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
         with:
           fetch-depth: 0
           ref: ${{ github.event.workflow_run.head_sha }}
@@ -82,11 +82,15 @@ jobs:
             mv "$f" "$newname"
           done
 
-      - name: Generate release notes
+      # git-cliff previously generated notes here, but with no cliff.toml in the repo it
+      # fell back to its own built-in defaults — a second changelog generator producing
+      # different output from CHANGELOG.md, which commitizen already maintains. Extract
+      # this version's section from CHANGELOG.md instead, so there is exactly one source.
+      - name: Extract changelog for this version
         if: steps.tag.outputs.version != ''
-        uses: orhun/git-cliff-action@v4
-        with:
-          args: --latest --strip header --output release_notes.md
+        run: |
+          TAG="${{ steps.tag.outputs.version }}"
+          awk "/^## ${TAG} /{found=1; next} /^## v/{if(found) exit} found{print}" CHANGELOG.md > release_notes.md
 
       - name: Append downloads table to release notes
         if: steps.tag.outputs.version != ''
