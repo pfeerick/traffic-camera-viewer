@@ -6,10 +6,13 @@ on:
     types: [completed]
     branches: [main]
 
-# Only one release can publish at a time; newer run cancels any in-progress one.
+# Only one release can publish at a time. Queue overlapping runs rather than
+# cancelling — a versioned release (e.g. a tagged bump pushed while the
+# previous run is still uploading assets) must finish publishing, not get
+# killed mid-upload by the next commit's run.
 concurrency:
   group: release
-  cancel-in-progress: true
+  cancel-in-progress: false
 
 jobs:
   release:
