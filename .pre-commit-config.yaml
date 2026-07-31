@@ -10,10 +10,49 @@ repos:
         types: [rust]
         pass_filenames: false
 
-  # Enforce conventional commit messages (feat:, fix:, chore:, etc.)
-  - repo: https://github.com/compilerla/conventional-pre-commit
-    rev: v3.4.0
+  # Standard hygiene checks
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v6.0.0
     hooks:
-      - id: conventional-pre-commit
+      - id: mixed-line-ending
+        args: [--fix=lf]
+        stages: [pre-commit]
+      - id: check-yaml
+        stages: [pre-commit]
+      - id: check-toml
+        stages: [pre-commit]
+      - id: check-json
+        stages: [pre-commit]
+      - id: detect-private-key
+        stages: [pre-commit]
+      - id: end-of-file-fixer
+        stages: [pre-commit]
+      - id: trailing-whitespace
+        args: [--markdown-linebreak-ext=md]
+        stages: [pre-commit]
+      - id: check-merge-conflict
+        stages: [pre-commit]
+
+  # Biome + Prettier (lint + format) for the frontend
+  - repo: local
+    hooks:
+      - id: biome
+        name: Biome + Prettier (lint + format)
+        entry: bun run check:fix
+        language: system
+        pass_filenames: false
+        stages: [pre-commit]
+
+  # Enforce conventional commit messages. Local rather than upstream
+  # (compilerla/conventional-pre-commit), because pre-commit otherwise builds
+  # its own commitizen at a rev that drifts from the pipx:commitizen pinned in
+  # .mise.toml — the same one `cz bump` runs. Resolving `cz` from PATH needs
+  # mise's shims dir.
+  - repo: local
+    hooks:
+      - id: commitizen
+        name: commitizen check
+        entry: cz check
+        args: [--allow-abort, --commit-msg-file]
+        language: system
         stages: [commit-msg]
-        args: [feat, fix, docs, style, refactor, test, chore, perf, ci, build]
