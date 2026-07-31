@@ -1,5 +1,11 @@
 # Changelog
 
+## v0.7.2 (2026-07-31)
+
+### Fix
+
+- **release**: retry cz bump commit after pre-commit reformats files
+
 ## v0.7.1 (2026-07-31)
 
 ### Fix
