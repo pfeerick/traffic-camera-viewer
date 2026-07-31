@@ -1,0 +1,16 @@
+# mise's rust tool is rustup under the hood, and installs rustup itself if missing.
+# The channel here only bootstraps it — rustup then reads rust-toolchain.toml, which
+# stays the single source of truth for the toolchain CI and local builds actually use.
+# Keep the two in agreement. Components are listed because CI enforces both.
+[tools]
+rust = { version = "stable", components = "rustfmt,clippy", profile = "minimal" }
+bun = "1.3.14"
+"pipx:commitizen" = "4.17.0"
+"pipx:pre-commit" = "4.6.1"
+
+[tasks.setup]
+description = "Install dependencies and git hooks"
+run = [
+  "bun install",
+  "pre-commit install --hook-type pre-commit --hook-type commit-msg",
+]
