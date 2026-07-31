@@ -10,6 +10,10 @@
 *.md      text eol=lf
 *.json    text eol=lf
 *.sh      text eol=lf
+*.ts      text eol=lf
+*.svelte  text eol=lf
+*.css     text eol=lf
+*.html    text eol=lf
 
 # Windows scripts — CRLF on checkout
 *.bat     text eol=crlf
@@ -21,4 +25,9 @@
 *.jpeg    binary
 *.png     binary
 *.ico     binary
+*.icns    binary
 *.exe     binary
+
+# Generated lockfiles — exclude from diffs/linguist stats
+bun.lock     linguist-generated=true
+Cargo.lock   linguist-generated=true
