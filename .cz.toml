@@ -15,6 +15,8 @@ ignored_tag_patterns = ["latest"]
 pre_bump_hooks = [
     "bun install",
     "git add bun.lock",
+    "cargo check --manifest-path src-tauri/Cargo.toml",
+    "git add Cargo.lock",
 ]
 # Push the bump commit and its tag together, atomically. A tag that only exists
 # locally is indistinguishable from one deleted upstream, so the next fetch
