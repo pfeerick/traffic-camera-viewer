@@ -22,9 +22,9 @@ jobs:
       actions: read   # required to download artifacts from the triggering run
 
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
         with:
-          fetch-depth: 0   # git-cliff needs full history; tag lookup needs tags
+          fetch-depth: 0
           ref: ${{ github.event.workflow_run.head_sha }}
 
       - uses: actions/download-artifact@v8
@@ -33,6 +33,18 @@ jobs:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           path: artifacts
           merge-multiple: true
+
+      # Flatten nested Tauri bundle directories into a single artifacts/ dir,
+      # keeping only the distributable files (exe, AppImage, deb, dmg).
+      - name: Flatten bundle artifacts
+        run: |
+          mkdir -p flat
+          find artifacts -type f \( \
+            -name "*.exe" -o -name "*.msi" -o \
+            -name "*.AppImage" -o -name "*.deb" -o \
+            -name "*.dmg" -o -name "*.app.tar.gz" \
+          \) -exec cp {} flat/ \;
+          ls flat/
 
       - name: Detect version tag
         id: tag
@@ -54,7 +66,7 @@ jobs:
             --notes $'Automated build from the latest commit on `main`.\nCommit: ${{ github.event.workflow_run.head_sha }}' \
             --prerelease \
             --repo ${{ github.repository }} \
-            artifacts/*
+            flat/*
 
       # ── Versioned release (v* tag found on commit) ────────────────────────
 
@@ -62,17 +74,23 @@ jobs:
         if: steps.tag.outputs.version != ''
         run: |
           VERSION="${{ steps.tag.outputs.version }}"
-          cd artifacts
+          cd flat
           for f in *; do
-            newname=$(echo "$f" | sed "s/traffic-camera-viewer-/traffic-camera-viewer-${VERSION}-/")
+            ext="${f##*.}"
+            base="${f%.*}"
+            newname="${base}-${VERSION}.${ext}"
             mv "$f" "$newname"
           done
 
-      - name: Generate release notes
+      # git-cliff previously generated notes here, but with no cliff.toml in the repo it
+      # fell back to its own built-in defaults — a second changelog generator producing
+      # different output from CHANGELOG.md, which commitizen already maintains. Extract
+      # this version's section from CHANGELOG.md instead, so there is exactly one source.
+      - name: Extract changelog for this version
         if: steps.tag.outputs.version != ''
-        uses: orhun/git-cliff-action@v4
-        with:
-          args: --latest --strip header --output release_notes.md
+        run: |
+          TAG="${{ steps.tag.outputs.version }}"
+          awk "/^## ${TAG} /{found=1; next} /^## v/{if(found) exit} found{print}" CHANGELOG.md > release_notes.md
 
       - name: Append downloads table to release notes
         if: steps.tag.outputs.version != ''
@@ -84,9 +102,9 @@ jobs:
 
           | Platform | File |
           |----------|------|
-          | Windows (x86-64) | \`traffic-camera-viewer-${VERSION}-windows.exe\` |
-          | Linux (x86-64) | \`traffic-camera-viewer-${VERSION}-linux\` |
-          | macOS (Apple Silicon) | \`traffic-camera-viewer-${VERSION}-macos\` |
+          | Windows (x86-64) | \`.exe\` or \`.msi\` installer |
+          | Linux (x86-64) | \`.AppImage\` or \`.deb\` package |
+          | macOS (Apple Silicon) | \`.dmg\` image |
           EOF
 
       - name: Versioned release
@@ -99,4 +117,4 @@ jobs:
             --notes-file release_notes.md \
             --latest \
             --repo ${{ github.repository }} \
-            artifacts/*
+            flat/*

@@ -1,3 +1,11 @@
 /target
+/src-tauri/target
+/dist
+/node_modules
 /.claude/*.local.json
 /.claude/*.local.*.json
+/src-tauri/gen/schemas
+.DS_Store
+*.local
+dist-ssr
+.vite

@@ -1,0 +1,48 @@
+[package]
+name = "traffic-camera-viewer"
+version = "0.6.0"
+edition = "2024"
+authors = ["Peter Feerick"]
+license = "GPL-3.0-or-later"
+description = "Desktop viewer for Queensland traffic cameras with configurable grid, district filtering, and auto-refresh"
+repository = "https://github.com/pfeerick/traffic-camera-viewer"
+
+[lib]
+name = "traffic_camera_viewer_lib"
+crate-type = ["staticlib", "cdylib", "rlib"]
+
+[[bin]]
+name = "traffic-camera-viewer"
+path = "src/main.rs"
+
+[dependencies]
+tauri          = { version = "2", features = ["rustls-tls"] }
+tauri-plugin-dialog  = "2"
+tauri-plugin-log     = "2"
+
+# HTTP client (rustls avoids needing OpenSSL on Windows)
+reqwest        = { version = "0.13.2", default-features = false, features = ["rustls", "json"] }
+
+# Async runtime
+tokio          = { version = "1", features = ["rt-multi-thread", "macros", "time", "sync"] }
+
+# Serialization
+serde          = { version = "1", features = ["derive"] }
+serde_json     = "1"
+
+# JPEG → base64 for IPC transfer
+image          = { version = "0.25", default-features = false, features = ["jpeg"] }
+base64         = "0.22"
+
+# Time (cache-busting timestamps)
+chrono         = { version = "0.4", default-features = false, features = ["clock"] }
+
+# Error types
+thiserror      = "2"
+
+# Logging
+log            = "0.4"
+
+[build-dependencies]
+chrono = { version = "0.4", default-features = false, features = ["clock"] }
+tauri-build = { version = "2", features = [] }
