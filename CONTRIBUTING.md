@@ -6,25 +6,36 @@ Thanks for your interest in contributing to Traffic Camera Viewer.
 
 ### Requirements
 
-- Rust toolchain (stable) via `rustup`
-- [Bun](https://bun.sh) runtime (JavaScript/TypeScript)
-  ```bash
-  # Windows
-  winget install OvenSh.Bun
-  # macOS / Linux
-  curl -fsSL https://bun.sh/install | bash
+This repo uses [mise](https://mise.jdx.dev) as the single toolchain source of truth. It provides
+Rust (via rustup), Bun, [commitizen](https://commitizen-tools.github.io/commitizen/) and
+[pre-commit](https://pre-commit.com) — no separate installs of any of those needed.
+
+```bash
+# Install mise itself
+# Windows
+winget install jdx.mise
+# macOS / Linux
+curl https://mise.run | sh
+```
+
+Then, from the repo root:
+```bash
+mise install       # installs the pinned Rust, Bun, commitizen, pre-commit
+mise run setup     # bun install + activates the pre-commit git hooks
+```
+
+- On Windows: VS Build Tools with the C++ workload and the Windows SDK are also required (not
+  something mise can provide). Without them, `link.exe` resolves to GNU coreutils' `link` and
+  every build script fails with `link: extra operand`.
+  ```powershell
+  winget install --id Microsoft.VisualStudio.2022.BuildTools --override "--wait --quiet --norestart --add Microsoft.VisualStudio.Workload.VCTools --includeRecommended"
   ```
-- Node.js **22.12+** (required by Vite 8). The repo ships a `.node-version` file pinned to `22`.
-  Recommended: use [fnm](https://github.com/Schniz/fnm) for automatic version switching.
+- On Linux (Debian/Ubuntu), WebKit + GTK dev packages are also required:
   ```bash
-  # Windows
-  winget install Schniz.fnm
-  # macOS / Linux
-  curl -fsSL https://fnm.vercel.app/install | bash
+  sudo apt install libwebkit2gtk-4.1-dev libgtk-3-dev \
+    libayatana-appindicator3-dev librsvg2-dev
   ```
-  After installing fnm, add shell integration (see fnm docs), then `fnm install 22` once.
-  fnm will auto-switch to Node 22 whenever you enter this directory.
-- On Windows: VS Build Tools (included with Visual Studio)
+- On macOS — works out of the box; Xcode command-line tools required.
 
 ### Git configuration (all platforms)
 
@@ -40,24 +51,26 @@ git config --local core.autocrlf input   # normalise to LF on commit
 git config --local core.safecrlf false   # silence conversion warnings
 ```
 
-### Platform-specific build dependencies
-
-**Windows** — works out of the box after installing the Rust toolchain, VS Build Tools, and Bun.
-
-**Linux (Debian/Ubuntu):**
+And this one, because the AI-guidance pointer files (`CLAUDE.md`, `AGENTS.md`, etc.) are real
+git symlinks to `.ai/instructions.md`:
 ```bash
-sudo apt install libwebkit2gtk-4.1-dev libgtk-3-dev \
-  libayatana-appindicator3-dev librsvg2-dev
+git config --local core.symlinks true
 ```
+Without it, git checks those files out as plain text files containing the target path instead of
+real symlinks, and a later edit-and-commit from that clone would silently convert them into real
+files for everyone else. **Windows contributors need Developer Mode enabled before cloning** —
+unprivileged symlink creation requires it.
 
-**macOS** — works out of the box; Xcode command-line tools required.
+**Committing from an editor UI (not a terminal) on Windows:** mise's shims dir
+(`%LOCALAPPDATA%\mise\shims`, or `~/.local/share/mise/shims` on Linux/macOS) needs to be on your
+*persistent* PATH. `mise activate` only updates PATH when a shell prompt is drawn, which an
+editor's built-in commit UI never triggers — so the `cz` commit-msg hook resolves nothing from
+PATH and the commit fails there, even though the exact same commit works fine from a terminal.
+Restart the editor fully after changing PATH.
 
 ### Build and Run
 
 ```bash
-# Install frontend dependencies
-bun install
-
 # Tauri desktop development (Vite dev server + Tauri window)
 bun run tauri:dev
 
@@ -76,36 +89,27 @@ bun run build && bun run server
 # Rust unit tests (from src-tauri/)
 cd src-tauri && cargo test
 
-# TypeScript check
-bun tsc --noEmit
+# Frontend lint + format (Biome + Prettier)
+bun run check
+bun run check:fix
+
+# Frontend + server type checking (svelte-check + server tsc)
+bun run typecheck
 ```
 
 ## Pre-commit Hooks
 
 This project uses [pre-commit](https://pre-commit.com) for formatting and commit linting,
-and [commitizen](https://commitizen-tools.github.io/commitizen/) for semantic versioning.
-
-Install [uv](https://docs.astral.sh/uv/getting-started/installation/) if not already present:
-```bash
-# Windows
-winget install astral-sh.uv
-
-# Linux / macOS
-curl -LsSf https://astral.sh/uv/install.sh | sh
-```
-
-Then install the tools and activate the hooks:
-```bash
-uv tool install pre-commit
-uv tool install commitizen
-pre-commit install
-pre-commit install --hook-type commit-msg
-```
+and [commitizen](https://commitizen-tools.github.io/commitizen/) for semantic versioning. Both
+are installed by `mise install` and activated by `mise run setup` — no separate install step.
 
 Hooks that run automatically:
-- **`cargo fmt`** — formats changed Rust files (in `src-tauri/`) on every commit
-- **conventional-pre-commit** — rejects commits whose message doesn't follow the
-  [Conventional Commits](https://www.conventionalcommits.org) spec
+- **`cargo-fmt`** — formats changed Rust files (in `src-tauri/`) on every commit
+- **pre-commit-hooks hygiene suite** — whitespace/EOL/YAML/JSON/TOML checks, private-key
+  detection, merge-conflict markers
+- **`biome`** — runs `bun run check:fix` (Biome + Prettier) on every commit
+- **`commitizen`** (`cz check`, commit-msg stage) — rejects commits whose message doesn't follow
+  the [Conventional Commits](https://www.conventionalcommits.org) spec
 
 To bump the version and generate a changelog entry:
 ```bash
@@ -113,7 +117,8 @@ cz bump
 ```
 
 **Note:** `cz bump` automatically updates the version in `src-tauri/Cargo.toml`,
-`src-tauri/tauri.conf.json`, and `package.json` as configured in `.cz.toml`.
+`src-tauri/tauri.conf.json`, and `package.json` as configured in `.cz.toml`, then commits, tags,
+and pushes the result.
 
 ## Commit Message Format
 
@@ -148,7 +153,7 @@ Allowed types:
 
 1. Create a feature branch.
 2. Make focused changes.
-3. Run `cd src-tauri && cargo check && cargo test` and `bun tsc --noEmit`.
+3. Run `cd src-tauri && cargo check && cargo test`, then `bun run check` and `bun run typecheck`.
 4. Update docs when behavior changes.
 5. Open a pull request with a clear summary.
 
@@ -166,7 +171,8 @@ Allowed types:
 - Use Svelte stores for shared state; `$state` / `$derived` runes for local component state.
 - Keep the API abstraction layer (`src/lib/api/`) clean — route calls through `api.someMethod()`,
   never call Tauri `invoke()` or `fetch()` directly from components.
-- TypeScript strict mode is enabled; `bun tsc --noEmit` must pass with no errors.
+- TypeScript strict mode is enabled; `bun run typecheck` (svelte-check + server tsc) must pass
+  with no errors. `bun run check` (Biome + Prettier) must also pass clean.
 
 ## UI Changes
 
@@ -185,7 +191,9 @@ When changing UI behavior, verify in both modes:
 
 ## Windows Notes
 
-If tools run in shell environments that cannot find `cargo`, ensure PATH includes the Cargo bin directory.
+If a shell environment can't find `cargo`, `bun`, `cz` or `pre-commit`, make sure mise's shims dir
+(`%LOCALAPPDATA%\mise\shims`) is on PATH — see the editor-PATH warning above; this applies to any
+non-interactive shell, not just editor commit UIs.
 The Rust crate is in `src-tauri/` — always run `cargo` commands from that directory.
 
 ## License
