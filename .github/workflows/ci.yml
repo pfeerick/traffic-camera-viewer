@@ -13,10 +13,14 @@ on:
       - 'LICENSE'
       - '.github/workflows/release.yml'
 
-# Cancel in-progress runs for the same ref (branch or PR).
+# Cancel in-progress runs for the same ref (branch or PR) — but never for main,
+# where release.yml gates publishing on this workflow's conclusion being
+# 'success'. Cancelling main's CI turns into a silently missing release (a
+# pushed tag with no GitHub release), since 'cancelled' never satisfies that
+# gate. Pushes to main queue instead.
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
-  cancel-in-progress: true
+  cancel-in-progress: ${{ github.ref != 'refs/heads/main' }}
 
 jobs:
   lint:
